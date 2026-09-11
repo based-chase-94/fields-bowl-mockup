@@ -141,7 +141,7 @@
   <section data-when="allover">
     <h2>Wrap artwork</h2>
     <div id="wrapArt" class="opts"></div>
-    <div class="grid2" style="margin-top:7px">
+    <div class="grid2" id="wrapExtras" style="margin-top:7px">
       <button class="act" data-wrap="template">Guide</button>
       <button class="act" data-wrap="none">None</button>
     </div>
@@ -170,7 +170,7 @@
   <section data-when="tape">
     <h2>Tape artwork</h2>
     <div id="tapeArt" class="opts"></div>
-    <div class="grid2" style="margin-top:7px">
+    <div class="grid2" id="tapeExtras" style="margin-top:7px">
       <button class="act" data-tape="guide">Guide</button>
       <button class="act" data-tape="none">Blank</button>
     </div>
@@ -266,6 +266,11 @@ var DEFAULT_PRESET = 0;
    flip this to true to bring the control back, e.g. when choosing between two
    quoted specs so artwork can be drawn to each rather than stretched to fit. */
 var SHOW_SIZE_PICKER = false;
+
+/* Guide / None / Blank are working tools, not client choices — stowed the same
+   way. Nothing is deleted: flip this, or call FieldsBowl.artworkExtras(true)
+   in the console, to get the safe-area guide and the blank bowl back. */
+var SHOW_ARTWORK_EXTRAS = false;
 
 /* Liner = rim curl + inside face. */
 var LINERS = [
@@ -1407,6 +1412,13 @@ window.FieldsBowl={
   sizePicker:  function(on){
     document.getElementById('sizeSection').classList.toggle('stowed', !on);
   },
+  artworkExtras: function(on){
+    ['wrapExtras','tapeExtras'].forEach(function(id){
+      document.getElementById(id).classList.toggle('stowed', !on);
+    });
+  },
+  wrapGuide:   function(){ pickWrap('template'); },
+  tapeGuide:   function(){ pickTape('guide'); },
   pickSize:    function(i){ pickSize(i); },
   tapeSpec:    function(){ return state.tape; },
   tapeCanvas:  tapeCanvas,
@@ -1423,6 +1435,9 @@ window.FieldsBowl={
 
 /* ------------------------------------------------------------------ boot */
 document.getElementById('sizeSection').classList.toggle('stowed', !SHOW_SIZE_PICKER);
+['wrapExtras','tapeExtras'].forEach(function(id){
+  document.getElementById(id).classList.toggle('stowed', !SHOW_ARTWORK_EXTRAS);
+});
 document.body.dataset.mode='allover';
 Array.prototype.forEach.call(modeHost.children,function(b){
   b.setAttribute('aria-pressed', b.dataset.key==='allover' ? 'true':'false');
