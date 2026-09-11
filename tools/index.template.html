@@ -1,0 +1,1437 @@
+<meta charset="utf-8">
+<!-- Pre-launch client work. Public repo is a GitHub Pages requirement on the
+     free plan; this keeps it out of search results. The link still works for
+     anyone it is sent to. -->
+<meta name="robots" content="noindex, nofollow">
+<title>Fields Bowl Mockup</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --bg:#14161a; --panel:#1c1f25; --line:#2c313a; --ink:#e7eaef;
+    --dim:#9aa3b0; --accent:#ffd23f; --accent-ink:#14161a; --danger:#ff5c4d;
+    --field:#23272f;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:13px/1.45 ui-sans-serif,-apple-system,"SF Pro Text",Inter,Segoe UI,Roboto,sans-serif;
+    display:flex; overflow:hidden;
+  }
+  /* ---------- stage ---------- */
+  #stage{position:relative;flex:1;min-width:0;
+    background:radial-gradient(115% 95% at 50% 18%,#40464f 0%,#23262c 48%,#131519 100%);}
+  #stage.plain{background:#1a1d22}
+  #stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  #stage canvas:active{cursor:grabbing}
+  #hint{position:absolute;left:16px;bottom:14px;color:#8d96a4;font-size:11px;
+    letter-spacing:.03em;pointer-events:none;user-select:none}
+  #busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(15,17,20,.72);color:var(--accent);font-size:14px;font-weight:600;z-index:5}
+  body.busy #busy{display:flex}
+
+  /* ---------- panel ---------- */
+  #panel{width:330px;flex:none;background:var(--panel);border-left:1px solid var(--line);
+    overflow-y:auto;overflow-x:hidden}
+  #panel::-webkit-scrollbar{width:9px}
+  #panel::-webkit-scrollbar-thumb{background:#343a44;border-radius:9px}
+  header{padding:16px 16px 13px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:14px;letter-spacing:.01em}
+  header p{margin:3px 0 0;color:var(--dim);font-size:11.5px}
+  section{border-bottom:1px solid var(--line);padding:13px 16px 15px}
+  h2{margin:0 0 10px;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+
+  .row{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .row:last-child{margin-bottom:0}
+  .row label{flex:none;width:74px;color:var(--dim);font-size:11.5px}
+  .row input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:18px}
+  .num{flex:none;width:62px;background:var(--field);border:1px solid var(--line);
+    color:var(--ink);border-radius:5px;padding:4px 6px;font:inherit;font-size:11.5px;
+    text-align:right;font-variant-numeric:tabular-nums}
+  .num:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+
+  .sw{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .sw button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;
+    cursor:pointer;padding:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+  .sw button[aria-pressed=true]{border-color:var(--accent)}
+  .pick{display:flex;align-items:center;gap:8px}
+  .pick input[type=color]{width:34px;height:26px;padding:0;border:1px solid var(--line);
+    border-radius:5px;background:var(--field);cursor:pointer}
+  .opts{display:flex;flex-direction:column;gap:5px}
+  .opts button{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;
+    background:var(--field);border:1px solid var(--line);color:var(--ink);
+    border-radius:6px;padding:7px 10px;font:inherit;font-size:12px;cursor:pointer}
+  .opts button:hover{border-color:#48505d;background:#282d35}
+  .opts button[aria-pressed=true]{border-color:var(--accent);
+    box-shadow:inset 0 0 0 1px var(--accent);background:#2a2b26}
+  .opts button b{font-weight:600;flex:none}
+  .opts button span{color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums;
+    margin-left:auto;text-align:right}
+  .opts button[aria-pressed=true] span{color:#c9c2a0}
+  .sub{color:var(--dim);font-size:11px;display:block;margin-top:2px}
+  .stowed{display:none!important}
+  body[data-mode="allover"] [data-when="tape"],
+  body[data-mode="tape"] [data-when="allover"]{display:none}
+  .slot{font-size:11px}
+  .slot b{font-weight:600}
+  .pick code{color:var(--dim);font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  button.act{width:100%;background:var(--field);border:1px solid var(--line);color:var(--ink);
+    border-radius:6px;padding:7px 10px;font:inherit;font-size:12px;cursor:pointer;text-align:center}
+  button.act:hover{border-color:#48505d;background:#282d35}
+  button.act.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  button.act.primary:hover{background:#ffdc63}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .stack>*{margin-bottom:6px}
+  .stack>*:last-child{margin-bottom:0}
+
+  .chk{display:flex;align-items:center;gap:7px;color:var(--dim);font-size:11.5px;cursor:pointer;user-select:none}
+  .chk input{accent-color:var(--accent);margin:0}
+
+  table.spec{width:100%;border-collapse:collapse;font-size:11.5px;
+    font-variant-numeric:tabular-nums}
+  table.spec th{text-align:left;font-weight:400;color:var(--dim);padding:2.5px 0;white-space:nowrap}
+  table.spec td{text-align:right;padding:2.5px 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  table.spec tr.rule td,table.spec tr.rule th{border-top:1px solid var(--line);padding-top:7px}
+  .note{color:var(--dim);font-size:11px;margin:9px 0 0;line-height:1.5}
+  .warn{color:var(--danger)}
+  #wrapname{color:var(--dim);font-size:11px;margin:0 0 8px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  #file{display:none}
+
+  /* narrow windows: stack the panel under the stage */
+  @media (max-width:860px){
+    body{flex-direction:column;overflow:auto}
+    #stage{flex:none;height:58vh;min-height:300px}
+    #panel{width:auto;border-left:0;border-top:1px solid var(--line);overflow:visible}
+    #hint{display:none}
+  }
+</style>
+
+<div id="stage">
+  <div id="busy">Rendering die-line…</div>
+  <div id="hint">Drag to orbit · scroll to zoom · double-click to reset</div>
+</div>
+
+<aside id="panel">
+  <header>
+    <h1>Fields · Salad Bowl</h1>
+    <p id="sub">Wrap mockup &amp; die-line calculator</p>
+  </header>
+
+  <section>
+    <h2>Concept</h2>
+    <div id="modes" class="opts"></div>
+  </section>
+
+  <section id="sizeSection">
+    <h2>Bowl size</h2>
+    <div id="sizes" class="opts"></div>
+    <p class="note" id="sizenote"></p>
+  </section>
+
+  <section data-when="allover">
+    <h2>Rim &amp; interior</h2>
+    <div id="liners" class="opts"></div>
+    <p class="note">The liner is the rim curl and the inside face — everything the
+      printed wrap does not cover.</p>
+  </section>
+
+  <section data-when="allover">
+    <h2>Wrap artwork</h2>
+    <div id="wrapArt" class="opts"></div>
+    <div class="grid2" style="margin-top:7px">
+      <button class="act" data-wrap="template">Guide</button>
+      <button class="act" data-wrap="none">None</button>
+    </div>
+    <p class="note" id="wrapnote"></p>
+  </section>
+
+  <section data-when="allover">
+    <h2>Die-line spec</h2>
+    <table class="spec">
+      <tr><th>Slant height (strip H)</th><td id="s_slant"></td></tr>
+      <tr><th>Rim circumference (strip W)</th><td id="s_arcT"></td></tr>
+      <tr><th>Base circumference</th><td id="s_arcB"></td></tr>
+      <tr class="rule"><th>Inner radius (base edge)</th><td id="s_rin"></td></tr>
+      <tr><th>Outer radius (rim edge)</th><td id="s_rout"></td></tr>
+      <tr><th>Sweep angle</th><td id="s_sweep"></td></tr>
+      <tr><th>Die-line bounding box</th><td id="s_bbox"></td></tr>
+      <tr class="rule"><th>Strip @ 300 dpi</th><td id="s_px"></td></tr>
+      <tr><th>Base-to-rim squeeze</th><td id="s_sq"></td></tr>
+      <tr class="rule"><th>Nominal (supplier rating)</th><td id="s_nom"></td></tr>
+      <tr><th>Brim capacity (computed)</th><td id="s_vol"></td></tr>
+    </table>
+    <p class="note" id="s_warn"></p>
+    <button class="act" id="copy" style="margin-top:10px">Copy spec to clipboard</button>
+  </section>
+
+  <section data-when="tape">
+    <h2>Tape artwork</h2>
+    <div id="tapeArt" class="opts"></div>
+    <div class="grid2" style="margin-top:7px">
+      <button class="act" data-tape="guide">Guide</button>
+      <button class="act" data-tape="none">Blank</button>
+    </div>
+    <p class="note" id="tapenote"></p>
+  </section>
+
+  <section data-when="tape">
+    <h2>Tape spec</h2>
+    <table class="spec">
+      <tr><th>Tape size</th><td id="t_size"></td></tr>
+      <tr><th>Printed length</th><td id="t_print"></td></tr>
+      <tr><th>Adhesive each end</th><td id="t_end"></td></tr>
+      <tr class="rule"><th>Artwork @ 300 dpi</th><td id="t_px"></td></tr>
+      <tr class="rule"><th>Bowl top span</th><td id="t_top"></td></tr>
+      <tr><th>Centre band for words</th><td id="t_words"></td></tr>
+      <tr class="rule"><th>Over the lid</th><td id="t_lid"></td></tr>
+      <tr><th>Down each wall</th><td id="t_wall"></td></tr>
+      <tr><th>Onto the underside</th><td id="t_under"></td></tr>
+    </table>
+    <p class="note" id="t_warn"></p>
+    <button class="act" id="tcopy" style="margin-top:10px">Copy spec to clipboard</button>
+  </section>
+
+  <section>
+    <h2>Export</h2>
+    <div class="stack">
+      <div class="row" style="margin-bottom:2px">
+        <label>View size</label>
+        <select class="num" id="scale" style="width:auto;flex:1;text-align:left">
+          <option value="1">1× screen</option>
+          <option value="2" selected>2× screen</option>
+          <option value="4">4× screen</option>
+        </select>
+      </div>
+      <label class="chk"><input type="checkbox" id="bg"> Include backdrop (otherwise transparent)</label>
+      <button class="act primary" id="snap">Save view as PNG</button>
+      <div class="grid2" data-when="tape">
+        <button class="act" id="tpPng">Tape artwork PNG</button>
+        <button class="act" id="tpSvg">Tape template SVG</button>
+      </div>
+      <div class="grid2" data-when="allover">
+        <button class="act" id="dlPng">Die-line PNG</button>
+        <button class="act" id="dlSvg">Die-line SVG</button>
+      </div>
+    </div>
+    <p class="note">Die-line PNG is 300 dpi with 3 mm bleed. SVG carries cut / bleed / safe-area paths in millimetres.</p>
+  </section>
+
+  <section>
+    <h2>View</h2>
+    <label class="chk"><input type="checkbox" id="spin"> Auto-rotate</label>
+  </section>
+</aside>
+
+<script src="lib/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+var DEG = Math.PI/180;
+/* Artwork is baked in at build time from the client folders beside
+   bowl-viewer — "AOP Bowl" for the all-over wrap, "Bowl Tape" for the band.
+   The viewer deliberately has no uploader: new concepts go in those folders
+   and the build is rerun. */
+var WRAP_ART = __WRAP_ART__;
+var TAPE_ART = __TAPE_ART__;
+var wrapImgs = [], tapeImgs = [];
+/* Fields yellow, sampled from the brand render. Single source of truth for the
+   body colour — the client-facing build deliberately exposes no picker. */
+var BODY_COLOUR = '#FCE300';
+
+/* Stock bowl sizes in the 44-52 oz band, from published manufacturer spec
+   sheets. `ml` is the supplier's nominal rating, which is a working fill
+   volume, not the brim — the viewer computes brim separately and they differ.
+   Two form factors dominate this band: a ~165 mm narrow/tall shape and a
+   ~180-185 mm wide/shallow one. */
+var PRESETS = [
+  { label:'44 oz', ml:1300, dTop:184,   dBot:161,   H:70, form:'shallow',
+    src:'Bioleader PE-SSK44' },
+  { label:'48 oz', ml:1420, dTop:184.9, dBot:162.1, H:82, form:'deep',
+    src:'Green Paper Products 185-Series' },
+  { label:'49 oz', ml:1450, dTop:180,   dBot:160,   H:65, form:'shallow',
+    src:'HMDO 1450 ml' },
+  { label:'51 oz', ml:1500, dTop:180,   dBot:160,   H:70, form:'shallow',
+    src:'HMDO 1500 ml' },
+  { label:'52 oz', ml:1500, dTop:185,   dBot:160,   H:65, form:'shallow',
+    src:'SoOPAK 1500 ml (sold as 50-52 oz)' }
+];
+var DEFAULT_PRESET = 0;
+
+/* The size picker is stowed for client review — the bowl is fixed at
+   DEFAULT_PRESET and the artwork is built to match it. Nothing is deleted:
+   flip this to true to bring the control back, e.g. when choosing between two
+   quoted specs so artwork can be drawn to each rather than stretched to fit. */
+var SHOW_SIZE_PICKER = false;
+
+/* Liner = rim curl + inside face. */
+var LINERS = [
+  { key:'match',   name:'Matches body',  note:'printed to the rim' },
+  { key:'white',   name:'White',         note:'bleached board liner' },
+  { key:'natural', name:'Natural kraft', note:'recycled / compostable' }
+];
+var RIM_SAFE = 5, BASE_SAFE = 6, BLEED = 3;   // mm
+var MM_IN = 25.4;
+
+/* Second concept: natural kraft bowl, clear lid, printed tape draped over the
+   top. Client brief: ~2.25 in wide, ~18 in long, the outer inch at each end is
+   adhesive, words centred on the bowl top. */
+var TAPE = { wIn:2.25, lIn:18, endIn:1.0 };
+var MODES = [
+  { key:'allover', name:'All-over print', note:'flood-printed bowl' },
+  { key:'tape',    name:'Printed tape',   note:'kraft bowl, lid, wrap band' }
+];
+
+/* ------------------------------------------------------------------ spec */
+function spec(dTop, dBot, H){
+  var Rt = dTop/2, Rb = dBot/2, dR = Rt - Rb;
+  var slant = Math.hypot(dR, H);
+  var rhoIn  = Rb*slant/dR;
+  var rhoOut = Rt*slant/dR;
+  var sweep  = 2*Math.PI*dR/slant;
+  var arcT = Math.PI*dTop, arcB = Math.PI*dBot;
+  var volume = Math.PI*H/3*(Rt*Rt + Rt*Rb + Rb*Rb)/1000;   // ml
+  return {
+    dTop:dTop, dBot:dBot, H:H, Rt:Rt, Rb:Rb, slant:slant,
+    rhoIn:rhoIn, rhoOut:rhoOut, sweep:sweep, arcT:arcT, arcB:arcB,
+    volume:volume, floz:volume/29.5735,
+    squeeze:(1 - dBot/dTop)*100,
+    pxW:Math.round(arcT*300/25.4), pxH:Math.round(slant*300/25.4)
+  };
+}
+
+/* Bounding box of the annular sector. The apex sits below the blank and rho
+   grows upward, so the rim (outer) arc is the top edge and artwork reads
+   upright: point(rho,phi) = (rho*sin phi, -rho*cos phi). */
+function sectorBox(rIn, rOut, hs){
+  var minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity, i, t, p;
+  function add(x,y){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
+  for(i=0;i<=512;i++){
+    t = -hs + 2*hs*i/512;
+    add(rIn*Math.sin(t),  -rIn*Math.cos(t));
+    add(rOut*Math.sin(t), -rOut*Math.cos(t));
+  }
+  return {minX:minX,maxX:maxX,minY:minY,maxY:maxY,w:maxX-minX,h:maxY-minY};
+}
+
+/* ------------------------------------------------------- bowl geometry */
+var G_BASE=0, G_WALL=1, G_RIM=2, G_INNER=3;
+
+function bowlProfile(s){
+  var Rt=s.Rt, Rb=s.Rb, H=s.H, slant=s.slant;
+  var rr = Math.min(2.4, H*0.05, (Rt-Rb)*0.2 + 1.2);   // rim bead radius
+  var t  = Math.min(1.2, rr*0.55);                     // wall thickness
+  var p = [];
+  function at(a){ return {r: Rt - 0.7*rr + rr*Math.cos(a), y: H - 0.7*rr + rr*Math.sin(a)}; }
+
+  /* underside */
+  p.push({r:0,        y:0, g:G_BASE});
+  p.push({r:Rb-5,     y:0, g:G_BASE});
+  p.push({r:Rb,       y:0, g:G_BASE});
+
+  /* Outer wall. Printing stops short of the rim: the flood and the artwork
+     both end RIM_SAFE below the rim edge, leaving bare board over the band and
+     the bead. So the textured wall runs only as far as the print-stop line,
+     and the liner material takes everything above it. */
+  var A0 = -55*DEG, A1 = 205*DEG;
+  var hand = at(A0);                                   // top of the straight cone
+  var wallLen = Math.hypot(hand.r-Rb, hand.y);
+  var tPrint = Math.max(0, Math.min(1, (slant-RIM_SAFE)/wallLen));
+  var i, f, q;
+  for(i=1;i<=10;i++){                                  // printed wall
+    f=i/10*tPrint;
+    p.push({r: Rb+(hand.r-Rb)*f, y: hand.y*f, g:G_WALL});
+  }
+  for(i=1;i<=4;i++){                                   // unprinted band
+    f=tPrint+(1-tPrint)*i/4;
+    p.push({r: Rb+(hand.r-Rb)*f, y: hand.y*f, g:G_RIM});
+  }
+  for(i=1;i<=16;i++){ q=at(A0+(A1-A0)*i/16); q.g=G_RIM; p.push(q); }
+
+  /* interior: a cone parallel to the outer wall, running from the end of the
+     bead down to the floor. It must stay inside the outer wall at every
+     height, so it is driven off Rb-t rather than off the bead radius. */
+  p.push({r: Rb-t,     y: t+2.5,  g:G_INNER});
+  p.push({r: Rb-t-2.5, y: t*0.6,  g:G_INNER});
+  p.push({r: 0,        y: t*0.6,  g:G_INNER});
+
+  /* v (texture height) = cumulative slant length measured from the BASE EDGE,
+     normalised to the spec slant. It must start at the base-edge vertex itself,
+     not at the first wall vertex — the wall is subdivided, so starting one
+     segment up smears the texture's bottom row across that segment and lifts
+     the whole artwork off the bottom of the bowl.
+     Left unclamped past the wall: the wall texture uses ClampToEdge so v>1
+     behaves the same, while the rim and interior need a continuous coordinate
+     for the kraft texture to tile across them. */
+  var base=0;
+  for(var b2=0;b2<p.length;b2++) if(p[b2].g===G_WALL){ base=b2-1; break; }
+  var cum=0;
+  for(var q3=0;q3<p.length;q3++){
+    if(q3>base) cum += Math.hypot(p[q3].r-p[q3-1].r, p[q3].y-p[q3-1].y);
+    p[q3].v = q3<base ? 0 : cum/slant;
+  }
+  return p;
+}
+
+/* Revolve a profile, splitting normals at creases and grouping by material. */
+function revolve(profile, segs){
+  var edges=[], i, j;
+  for(i=0;i<profile.length-1;i++){
+    var a=profile[i], b=profile[i+1];
+    var dx=b.r-a.r, dy=b.y-a.y, L=Math.hypot(dx,dy);
+    if(L < 1e-6) continue;
+    edges.push({a:a,b:b,nx:dy/L,ny:-dx/L,g:b.g!==undefined?b.g:a.g});
+  }
+  /* blend normals across smooth joins only */
+  function nAt(e, other){
+    if(!other) return [e.nx,e.ny];
+    var d = e.nx*other.nx + e.ny*other.ny;
+    if(d < 0.62) return [e.nx,e.ny];               // crease → keep hard
+    var x=e.nx+other.nx, y=e.ny+other.ny, l=Math.hypot(x,y)||1;
+    return [x/l,y/l];
+  }
+  var order=[G_BASE,G_WALL,G_RIM,G_INNER];
+  var pos=[],nor=[],uv=[],idx=[],groups=[],base=0;
+
+  for(var gi=0; gi<order.length; gi++){
+    var g=order[gi], start=idx.length;
+    for(i=0;i<edges.length;i++){
+      if(edges[i].g!==g) continue;
+      var e=edges[i];
+      var prev = (i>0 && edges[i-1].g===g)? edges[i-1] : null;
+      var next = (i<edges.length-1 && edges[i+1].g===g)? edges[i+1] : null;
+      var n0=nAt(e,prev), n1=nAt(e,next);
+      var row0=base, row1=base+segs+1;
+      for(j=0;j<=segs;j++){
+        var th = j/segs*Math.PI*2;
+        var st=Math.sin(th), ct=Math.cos(th);
+        var u = j/segs + 0.5;                       // seam at the back
+        pos.push(e.a.r*st, e.a.y, e.a.r*ct);
+        nor.push(n0[0]*st, n0[1], n0[0]*ct);
+        uv.push(u, e.a.v);
+        pos.push(e.b.r*st, e.b.y, e.b.r*ct);
+        nor.push(n1[0]*st, n1[1], n1[0]*ct);
+        uv.push(u, e.b.v);
+      }
+      for(j=0;j<segs;j++){
+        var p0=base+j*2, p1=p0+1, p2=p0+2, p3=p0+3;
+        idx.push(p0,p2,p1, p1,p2,p3);
+      }
+      base += (segs+1)*2;
+    }
+    groups.push({start:start, count:idx.length-start, mat:g});
+  }
+
+  var geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('normal',   new THREE.Float32BufferAttribute(nor,3));
+  geo.setAttribute('uv',       new THREE.Float32BufferAttribute(uv,2));
+  geo.setIndex(idx);
+  for(i=0;i<groups.length;i++) geo.addGroup(groups[i].start, groups[i].count, groups[i].mat);
+  return geo;
+}
+
+/* ------------------------------------------------------------ lid + tape */
+function lidGeom(s){ return { R:s.Rt+1.5, y0:s.H+1.0, dome:4 }; }
+function lidHeight(lid, d){
+  if(d>=lid.R) return lid.y0;
+  var f=d/lid.R; return lid.y0 + lid.dome*(1-f*f);
+}
+function lidProfile(s){
+  var lid=lidGeom(s), p=[], i;
+  for(i=0;i<=16;i++){ var d=lid.R*i/16; p.push({r:d, y:lidHeight(lid,d), g:G_WALL, v:0}); }
+  p.push({r:lid.R, y:lid.y0-7, g:G_WALL, v:0});      // skirt over the rim
+  return p;
+}
+
+function arcLen(pts){
+  var L=0; for(var i=1;i<pts.length;i++)
+    L += Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]);
+  return L;
+}
+/* Cross-section of lid+bowl in the vertical plane z = w, walked from the lid
+   centre outward. The tape is inextensible, so every lateral strip runs the
+   same arc length from the centre — which is why this is measured per strip
+   rather than projected flat. */
+function drapeCurve(s, lid, w){
+  var pts=[], i, n=90, x, y;
+  var xEdge=Math.sqrt(Math.max(0, lid.R*lid.R - w*w));
+  for(i=0;i<=n;i++){ x=xEdge*i/n; pts.push([x, lidHeight(lid, Math.hypot(x,w))]); }
+  var sLid=arcLen(pts);
+  pts.push([Math.sqrt(Math.max(0, s.Rt*s.Rt - w*w)), s.H]);
+  for(i=1;i<=n;i++){
+    y=s.H*(1-i/n);
+    var rc=s.Rb + (y/s.H)*(s.Rt-s.Rb);
+    pts.push([Math.sqrt(Math.max(0, rc*rc - w*w)), y]);
+  }
+  var sWall=arcLen(pts);
+  var xb=Math.sqrt(Math.max(0, s.Rb*s.Rb - w*w));
+  for(i=1;i<=n;i++) pts.push([xb*(1-i/n), 0]);
+  return { pts:pts, sLid:sLid, sWall:sWall, total:arcLen(pts) };
+}
+function resample(pts, target, N){
+  var lens=[], i, out=[];
+  for(i=1;i<pts.length;i++) lens.push(Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
+  var seg=0, acc=0;
+  for(var k=0;k<=N;k++){
+    var want=target*k/N;
+    while(seg<lens.length && acc+lens[seg]<want){ acc+=lens[seg]; seg++; }
+    if(seg>=lens.length){ out.push(pts[pts.length-1].slice()); continue; }
+    var t=lens[seg]>1e-9 ? (want-acc)/lens[seg] : 0;
+    out.push([ pts[seg][0]+(pts[seg+1][0]-pts[seg][0])*t,
+               pts[seg][1]+(pts[seg+1][1]-pts[seg][1])*t ]);
+  }
+  return out;
+}
+
+function tapeSpec(s){
+  var lid=lidGeom(s), c=drapeCurve(s, lid, 0);
+  var W=TAPE.wIn*MM_IN, L=TAPE.lIn*MM_IN, E=TAPE.endIn*MM_IN;
+  return { W:W, L:L, E:E, half:L/2, printed:L-2*E,
+           pxW:Math.round(L*300/25.4), pxH:Math.round(W*300/25.4),
+           sLid:c.sLid, sWall:c.sWall, avail:c.total, topSpan:2*lid.R };
+}
+
+/* Ribbon draped over the lid and down both sides. */
+function tapeGeometry(s){
+  var lid=lidGeom(s), t=tapeSpec(s);
+  var M=12, N=110, P=2*N+1, lift=0.6, j, k;
+  var cols=[];
+  for(j=0;j<=M;j++){
+    var w=-t.W/2 + t.W*j/M;
+    var c=drapeCurve(s, lid, w);
+    var arm=resample(c.pts, Math.min(t.half, c.total), N);
+    var full=[];
+    for(k=N;k>=1;k--) full.push([-arm[k][0], arm[k][1]]);
+    for(k=0;k<=N;k++) full.push([ arm[k][0], arm[k][1]]);
+    cols.push({ w:w, pts:full });
+  }
+  var pos=new Float32Array((M+1)*P*3), uv=[], nor=new Float32Array((M+1)*P*3), idx=[];
+  for(j=0;j<=M;j++) for(k=0;k<P;k++){
+    var o=(j*P+k)*3, pt=cols[j].pts[k];
+    pos[o]=pt[0]; pos[o+1]=pt[1]; pos[o+2]=cols[j].w;
+    uv.push(k/(P-1), 1-j/M);        // v flipped for CanvasTexture flipY
+  }
+  function g(jj,kk,c){ return pos[(jj*P+kk)*3+c]; }
+  for(j=0;j<=M;j++) for(k=0;k<P;k++){
+    var j0=Math.max(0,j-1), j1=Math.min(M,j+1), k0=Math.max(0,k-1), k1=Math.min(P-1,k+1);
+    var ax=g(j,k1,0)-g(j,k0,0), ay=g(j,k1,1)-g(j,k0,1), az=g(j,k1,2)-g(j,k0,2);
+    var bx=g(j1,k,0)-g(j0,k,0), by=g(j1,k,1)-g(j0,k,1), bz=g(j1,k,2)-g(j0,k,2);
+    var nx=-(ay*bz-az*by), ny=-(az*bx-ax*bz), nz=-(ax*by-ay*bx);
+    var l=Math.hypot(nx,ny,nz)||1;
+    var o2=(j*P+k)*3;
+    nor[o2]=nx/l; nor[o2+1]=ny/l; nor[o2+2]=nz/l;
+  }
+  for(var i=0;i<pos.length;i+=3){        // float the tape clear of the shell
+    pos[i]+=nor[i]*lift; pos[i+1]+=nor[i+1]*lift; pos[i+2]+=nor[i+2]*lift;
+  }
+  for(j=0;j<M;j++) for(k=0;k<P-1;k++){
+    var a=j*P+k, b=a+1, c2=(j+1)*P+k, d=c2+1;
+    idx.push(a,c2,b, b,c2,d);
+  }
+  var geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('normal',   new THREE.BufferAttribute(nor,3));
+  geo.setAttribute('uv',       new THREE.Float32BufferAttribute(uv,2));
+  geo.setIndex(idx);
+  return geo;
+}
+
+/* ------------------------------------------------------------ environment */
+function studioEnv(renderer){
+  var c=document.createElement('canvas'); c.width=1024; c.height=512;
+  var g=c.getContext('2d');
+  var grd=g.createLinearGradient(0,0,0,512);
+  grd.addColorStop(0,'#ffffff'); grd.addColorStop(.45,'#cdd2d9');
+  grd.addColorStop(.52,'#777d86'); grd.addColorStop(1,'#24262a');
+  g.fillStyle=grd; g.fillRect(0,0,1024,512);
+  function box(x,y,w,h,a){
+    var r=g.createRadialGradient(x,y,0,x,y,Math.max(w,h));
+    r.addColorStop(0,'rgba(255,255,255,'+a+')'); r.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=r; g.beginPath(); g.ellipse(x,y,w,h,0,0,6.2832); g.fill();
+  }
+  box(250,120,230,150,1); box(760,90,270,150,.85); box(520,200,150,110,.45);
+  var tex=new THREE.CanvasTexture(c);
+  tex.mapping=THREE.EquirectangularReflectionMapping;
+  var pm=new THREE.PMREMGenerator(renderer);
+  var env=pm.fromEquirectangular(tex).texture;
+  pm.dispose(); tex.dispose();
+  return env;
+}
+
+/* ------------------------------------------------------------------- app */
+var stage=document.getElementById('stage');
+var renderer=new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+/* No tone curve. ACES Filmic pushed the brand yellow #FCE300 to #E6DC68 on
+   screen — it lifts the blue channel to 104 and reads as cream. Straight
+   linear->sRGB keeps the flood on-hue; the lights below are balanced so the
+   front face lands on the brand value without clipping the form away. */
+renderer.toneMapping=THREE.NoToneMapping;
+renderer.toneMappingExposure=1.0;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.setClearAlpha(0);
+stage.appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+scene.environment=studioEnv(renderer);
+var camera=new THREE.PerspectiveCamera(32, 1, 1, 4000);
+
+var key=new THREE.DirectionalLight(0xffffff,2.16);
+key.position.set(-170,240,190); key.castShadow=true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.left=-180; key.shadow.camera.right=180;
+key.shadow.camera.top=180;  key.shadow.camera.bottom=-180;
+key.shadow.camera.near=50;  key.shadow.camera.far=800; key.shadow.bias=-0.0012;
+scene.add(key);
+var fill=new THREE.DirectionalLight(0xdfe6f2,0.61); fill.position.set(220,120,140); scene.add(fill);
+var back=new THREE.DirectionalLight(0xffffff,0.86); back.position.set(60,150,-260); scene.add(back);
+var amb=new THREE.AmbientLight(0xffffff,0.24); scene.add(amb);
+
+var ground=new THREE.Mesh(new THREE.PlaneGeometry(2400,2400), new THREE.ShadowMaterial({opacity:.3}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+/* materials: 0 base, 1 wall (textured), 2 rim, 3 interior */
+function paper(c){ return new THREE.MeshStandardMaterial({color:new THREE.Color(c),
+  roughness:.86, metalness:0, envMapIntensity:0.96}); }
+var matBase=paper('#e8e2d6'), matWall=paper('#ffffff'), matRim=paper('#ffffff'), matInner=paper('#f3efe6');
+var mats=[matBase,matWall,matRim,matInner];
+var matLid=new THREE.MeshStandardMaterial({color:0xeef4f7, roughness:.04, metalness:0,
+  transparent:true, opacity:.40, side:THREE.DoubleSide, envMapIntensity:2.4,
+  depthWrite:false});
+var tapeCv=document.createElement('canvas');
+var tapeTex=new THREE.CanvasTexture(tapeCv);
+tapeTex.colorSpace=THREE.SRGBColorSpace;
+tapeTex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+var matTape=new THREE.MeshStandardMaterial({color:0xffffff, roughness:.72, metalness:0,
+  map:tapeTex, side:THREE.DoubleSide});
+var lidMesh=null, tapeMesh=null;
+
+var liveCanvas=document.createElement('canvas');
+var tex=new THREE.CanvasTexture(liveCanvas);
+tex.colorSpace=THREE.SRGBColorSpace;
+tex.wrapS=THREE.RepeatWrapping; tex.wrapT=THREE.ClampToEdgeWrapping;
+tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+matWall.map=tex;
+
+var bowl=null;
+var state={ mode:'allover', preset:DEFAULT_PRESET, liner:'match', body:BODY_COLOUR,
+  tapeKind:'art',                    // 'art' | 'guide' | 'none'
+  tapeIndex:0, tape:null,
+  dTop:0, dBot:0, H:0, spec:null,
+  wrapKind:'art',       // 'art' | 'template' | 'none'
+  wrapIndex:0,
+  wrapSource:null };    // canvas or Image actually composited
+(function(){ var q=PRESETS[state.preset];
+  state.dTop=q.dTop; state.dBot=q.dBot; state.H=q.H; })();
+
+/* ------------------------------------------------------------- compositing */
+function composite(canvas, w, h){
+  canvas.width=w; canvas.height=h;
+  var g=canvas.getContext('2d');
+  g.clearRect(0,0,w,h);
+  /* Ink stops RIM_SAFE below the rim, so neither the flood nor the artwork is
+     painted into that band — it stays bare board on the model and shows as
+     no-ink in the die-line export. The guide overlay is exempt: it exists to
+     label the excluded zones, so it has to draw inside them. */
+  var stop = (RIM_SAFE/state.spec.slant)*h;
+  g.save();
+  if(state.wrapKind!=='template'){
+    g.beginPath(); g.rect(0, stop, w, h-stop); g.clip();
+  }
+  g.fillStyle=state.body; g.fillRect(0,0,w,h);
+  if(state.wrapSource){ g.imageSmoothingQuality='high';
+    g.drawImage(state.wrapSource,0,0,w,h); }
+  g.restore();
+  return canvas;
+}
+function refreshTexture(){
+  var s=state.spec, w=2048;
+  composite(liveCanvas, w, Math.max(2, Math.round(w*s.slant/s.arcT)));
+  tex.needsUpdate=true;
+}
+
+/* ------------------------------------------------------------------ build */
+function rebuild(){
+  state.spec = spec(state.dTop, state.dBot, state.H);
+  state.tape = tapeSpec(state.spec);
+  if(bowl){ scene.remove(bowl); bowl.geometry.dispose(); }
+  if(lidMesh){ scene.remove(lidMesh); lidMesh.geometry.dispose(); lidMesh=null; }
+  if(tapeMesh){ scene.remove(tapeMesh); tapeMesh.geometry.dispose(); tapeMesh=null; }
+  var geo = revolve(bowlProfile(state.spec), 240);
+  bowl = new THREE.Mesh(geo, mats);
+  bowl.castShadow=true; bowl.receiveShadow=true;
+  scene.add(bowl);
+  if(state.mode==='tape'){
+    lidMesh=new THREE.Mesh(revolve(lidProfile(state.spec),180),
+                           [matLid,matLid,matLid,matLid]);
+    scene.add(lidMesh);
+    tapeMesh=new THREE.Mesh(tapeGeometry(state.spec), matTape);
+    tapeMesh.castShadow=true;
+    scene.add(tapeMesh);
+  }
+  applyColors();
+  if(state.mode==='tape') refreshTape();
+  else refreshWrap();     // demo + guide are drawn to fit the current strip
+  readout();
+}
+/* Procedural kraft: flecked recycled board. Cheap, tiles, and avoids shipping
+   another binary asset. */
+function kraftTexture(){
+  var n=512, c=document.createElement('canvas'); c.width=c.height=n;
+  var g=c.getContext('2d');
+  /* Tuned against the rendered result, not the swatch: the studio lighting
+     lands this near #c2a478 on screen, which is where recycled board sits. */
+  g.fillStyle='#c49a63'; g.fillRect(0,0,n,n);
+  var img=g.getImageData(0,0,n,n), d=img.data, i;
+  for(i=0;i<d.length;i+=4){
+    var v=(Math.random()-0.5)*34;
+    d[i]=Math.max(0,Math.min(255,d[i]+v));
+    d[i+1]=Math.max(0,Math.min(255,d[i+1]+v*0.95));
+    d[i+2]=Math.max(0,Math.min(255,d[i+2]+v*0.85));
+  }
+  g.putImageData(img,0,0);
+  for(i=0;i<1400;i++){                                 // fibre flecks
+    var x=Math.random()*n, y=Math.random()*n, l=1.5+Math.random()*10,
+        a=Math.random()*Math.PI, dark=Math.random()<0.55;
+    g.strokeStyle=dark?'rgba(74,52,26,0.42)':'rgba(226,203,163,0.46)';
+    g.lineWidth=Math.random()<0.5?1.2:2.1;
+    g.beginPath(); g.moveTo(x,y); g.lineTo(x+Math.cos(a)*l, y+Math.sin(a)*l); g.stroke();
+  }
+  var t=new THREE.CanvasTexture(c);
+  t.colorSpace=THREE.SRGBColorSpace;
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.repeat.set(9,3);
+  t.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  return t;
+}
+var kraftTex=null;
+
+function applyColors(){
+  if(state.mode==='tape'){
+    /* Concept two is a plain natural kraft bowl — no printed wrap anywhere, so
+       every shell material is the same board. */
+    if(!kraftTex) kraftTex=kraftTexture();
+    [matWall,matRim,matInner,matBase].forEach(function(m){
+      m.color.set('#ffffff'); m.map=kraftTex; m.roughness=0.94; m.needsUpdate=true;
+    });
+    return;
+  }
+  matWall.map=tex;
+  matWall.color.set('#ffffff');                       // texture carries the colour
+  var liner=state.liner, col, map=null, rough=0.86;
+  if(liner==='white'){ col='#eeece6'; rough=0.80; }
+  else if(liner==='natural'){
+    if(!kraftTex) kraftTex=kraftTexture();
+    col='#ffffff'; map=kraftTex; rough=0.94;
+  } else { col=state.body; }
+  [matRim,matInner,matBase].forEach(function(m){
+    m.color.set(col); m.map=map; m.roughness=rough; m.needsUpdate=true;
+  });
+  refreshTexture();
+}
+
+/* --------------------------------------------------------------- controls */
+var cam={th:Math.PI*0.07, ph:1.15, r:1, tTh:Math.PI*0.07, tPh:1.15, tR:1};
+function frame(){
+  var s=state.spec;
+  cam.tR = Math.max(s.dTop, s.H*1.6) * 2.7;
+  cam.r  = cam.r===1 ? cam.tR : cam.r;
+}
+var drag=null;
+var el=renderer.domElement;
+el.addEventListener('pointerdown',function(e){ drag={x:e.clientX,y:e.clientY}; el.setPointerCapture(e.pointerId); });
+el.addEventListener('pointermove',function(e){
+  if(!drag) return;
+  cam.tTh -= (e.clientX-drag.x)*0.0075;
+  cam.tPh -= (e.clientY-drag.y)*0.0065;
+  cam.tPh = Math.max(0.10, Math.min(1.62, cam.tPh));
+  drag={x:e.clientX,y:e.clientY};
+});
+['pointerup','pointercancel','pointerleave'].forEach(function(k){
+  el.addEventListener(k,function(){ drag=null; });
+});
+el.addEventListener('wheel',function(e){
+  e.preventDefault();
+  cam.tR *= Math.exp(e.deltaY*0.0013);
+  var s=state.spec, lo=s.dTop*0.9, hi=s.dTop*9;
+  cam.tR=Math.max(lo,Math.min(hi,cam.tR));
+},{passive:false});
+el.addEventListener('dblclick',function(){ cam.tTh=Math.PI*0.07; cam.tPh=1.15; frame(); cam.tR=Math.max(state.spec.dTop,state.spec.H*1.6)*2.7; });
+
+/* --------------------------------------------------------------- render */
+function resize(){
+  var w=stage.clientWidth, h=stage.clientHeight;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize);
+
+var spinning=false;
+function tick(){
+  requestAnimationFrame(tick);
+  if(spinning) cam.tTh += 0.0042;
+  cam.th += (cam.tTh-cam.th)*0.16;
+  cam.ph += (cam.tPh-cam.ph)*0.16;
+  cam.r  += (cam.tR -cam.r )*0.14;
+  var s=state.spec, cy=s.H*0.45;
+  camera.position.set(
+    cam.r*Math.sin(cam.ph)*Math.sin(cam.th),
+    cam.r*Math.cos(cam.ph)+cy,
+    cam.r*Math.sin(cam.ph)*Math.cos(cam.th));
+  camera.lookAt(0,cy,0);
+  renderer.render(scene,camera);
+}
+
+/* --------------------------------------------------------------- readout */
+function n(v,d){ return v.toFixed(d===undefined?1:d); }
+function n2(mm){ return (mm/MM_IN).toFixed(2)+' in'; }
+function readoutTape(){
+  var t=state.tape, s=state.spec;
+  document.getElementById('t_size').textContent  = n2(t.L)+' × '+n2(t.W);
+  document.getElementById('t_print').textContent = n2(t.printed);
+  document.getElementById('t_end').textContent   = n2(t.E);
+  document.getElementById('t_px').textContent    = t.pxW+' × '+t.pxH+' px';
+  document.getElementById('t_top').textContent   = n2(t.topSpan)+' ('+n(t.topSpan,0)+' mm)';
+  document.getElementById('t_words').textContent = n2(2*t.sLid)+' centred';
+  document.getElementById('t_lid').textContent   = n2(2*t.sLid);
+  document.getElementById('t_wall').textContent  = n2(t.sWall-t.sLid);
+  document.getElementById('t_under').textContent = n2(t.half-t.sWall);
+  var w=document.getElementById('t_warn'), over=t.half-t.avail;
+  if(over>0){
+    w.className='note warn';
+    w.textContent='Tape is '+n2(2*over)+' longer than the bowl can take — the '+
+      'ends would overlap under the base.';
+  } else {
+    w.className='note';
+    w.textContent='The last '+n2(t.E)+' at each end lands on the underside, '+
+      n2(t.avail-t.half)+' short of the centre. Ends do not meet.';
+  }
+  document.getElementById('sub').textContent =
+    PRESETS[state.preset].label+' kraft · tape '+TAPE.lIn+' × '+TAPE.wIn+' in';
+}
+function readout(){
+  if(state.mode==='tape'){ readoutTape(); return; }
+  var s=state.spec;
+  var box=sectorBox(s.rhoIn, s.rhoOut, s.sweep/2);
+  document.getElementById('s_slant').textContent = n(s.slant,2)+' mm';
+  document.getElementById('s_arcT').textContent  = n(s.arcT,2)+' mm';
+  document.getElementById('s_arcB').textContent  = n(s.arcB,2)+' mm';
+  document.getElementById('s_rin').textContent   = n(s.rhoIn,2)+' mm';
+  document.getElementById('s_rout').textContent  = n(s.rhoOut,2)+' mm';
+  document.getElementById('s_sweep').textContent = n(s.sweep/DEG,2)+'°';
+  document.getElementById('s_bbox').textContent  = n(box.w,1)+' × '+n(box.h,1)+' mm';
+  document.getElementById('s_px').textContent    = s.pxW+' × '+s.pxH+' px';
+  document.getElementById('s_sq').textContent    = '−'+n(s.squeeze,1)+'%';
+  document.getElementById('s_vol').textContent   = Math.round(s.volume)+' ml / '+n(s.floz)+' fl oz';
+  var q=PRESETS[state.preset];
+  document.getElementById('s_nom').textContent = q.label+' / '+q.ml+' ml';
+  var w=document.getElementById('s_warn'), msgs=[];
+  if(s.sweep>Math.PI) msgs.push('Sweep exceeds 180°; the blank is very flared.');
+  msgs.push('Supplier ratings are working fill volume, not brim — expect the '+
+            'computed brim figure to run higher.');
+  w.className='note';
+  w.textContent = msgs.join(' ');
+  document.getElementById('sub').textContent =
+    q.label+' · '+n(s.dTop,0)+' × '+n(s.dBot,0)+' × '+n(s.H,0)+' mm';
+}
+function specText(){
+  var s=state.spec, box=sectorBox(s.rhoIn,s.rhoOut,s.sweep/2);
+  return [
+    'FIELDS SALAD BOWL — WRAP / DIE-LINE SPEC',
+    '  Size selected   '+PRESETS[state.preset].label+' / '+PRESETS[state.preset].ml+
+                       ' ml nominal ('+PRESETS[state.preset].src+')',
+    '',
+    'Bowl (truncated cone)',
+    '  Top OD           '+n(s.dTop,2)+' mm  ('+n(s.dTop/25.4,3)+' in)',
+    '  Base OD          '+n(s.dBot,2)+' mm  ('+n(s.dBot/25.4,3)+' in)',
+    '  Wall height      '+n(s.H,2)+' mm  ('+n(s.H/25.4,3)+' in)',
+    '  Slant height     '+n(s.slant,2)+' mm',
+    '  Brim capacity    '+Math.round(s.volume)+' ml / '+n(s.floz,1)+' fl oz',
+    '',
+    'Rectangular design strip (author artwork here)',
+    '  Size             '+n(s.arcT,2)+' × '+n(s.slant,2)+' mm',
+    '  At 300 dpi       '+s.pxW+' × '+s.pxH+' px',
+    '  Bleed            '+BLEED+' mm all round',
+    '  Rim safe area    '+RIM_SAFE+' mm from the top edge',
+    '  Base safe area   '+BASE_SAFE+' mm from the bottom edge',
+    '  Seam / glue lap  at the left & right edges (u = 0 / 1)',
+    '',
+    'Flat die-line (annular sector)',
+    '  Inner radius     '+n(s.rhoIn,2)+' mm   (base edge, arc '+n(s.arcB,2)+' mm)',
+    '  Outer radius     '+n(s.rhoOut,2)+' mm   (rim edge,  arc '+n(s.arcT,2)+' mm)',
+    '  Sweep angle      '+n(s.sweep/DEG,3)+'°',
+    '  Bounding box     '+n(box.w,1)+' × '+n(box.h,1)+' mm',
+    '',
+    'Distortion',
+    '  Art is compressed '+n(s.squeeze,1)+'% horizontally at the base relative to the rim.',
+    '  Vertical lines in the strip stay straight on the bowl; horizontals become arcs.'
+  ].join('\n');
+}
+
+/* ------------------------------------------------------------ tape artwork */
+/* Artwork is authored at the FULL tape size (18 x 2.25 in), long axis
+   horizontal. The outer inch at each end is adhesive, so it is painted over
+   whatever the artwork puts there. */
+function drawTapeGuide(g, W, H, t){
+  var mm = W/t.L, cx = W/2;
+  function band(a,b,fill,label,sub){
+    g.fillStyle=fill;
+    g.fillRect(cx+a*mm, 0, (b-a)*mm, H);
+    g.fillRect(cx-b*mm, 0, (b-a)*mm, H);
+    if(!label) return;
+    g.save(); g.fillStyle='rgba(0,0,0,.62)'; g.textAlign='center';
+    g.font='600 '+Math.round(H*0.10)+'px system-ui,sans-serif';
+    [1,-1].forEach(function(sgn){
+      var x=cx+sgn*(a+b)/2*mm;
+      g.fillText(label, x, H*0.40);
+      if(sub){ g.font=Math.round(H*0.082)+'px system-ui,sans-serif';
+               g.fillText(sub, x, H*0.56);
+               g.font='600 '+Math.round(H*0.10)+'px system-ui,sans-serif'; }
+    });
+    g.restore();
+  }
+  g.fillStyle='#ffffff'; g.fillRect(0,0,W,H);
+  band(t.sWall, t.half, '#eceef0', 'UNDERSIDE', null);
+  band(t.sLid,  t.sWall, '#e2edf5', 'BOWL SIDE', null);
+  /* centre band: the lid, where the words go */
+  g.fillStyle='#e6f3e4'; g.fillRect(cx-t.sLid*mm, 0, 2*t.sLid*mm, H);
+  g.save(); g.textAlign='center'; g.fillStyle='#2f6b33';
+  g.font='700 '+Math.round(H*0.17)+'px system-ui,sans-serif';
+  g.fillText('BOWL TOP — CENTRE WORDS HERE', cx, H*0.44);
+  g.font=Math.round(H*0.11)+'px system-ui,sans-serif';
+  g.fillText((2*t.sLid/MM_IN).toFixed(2)+' in across', cx, H*0.62);
+  g.restore();
+  /* inch ruler */
+  g.strokeStyle='rgba(0,0,0,.30)'; g.fillStyle='rgba(0,0,0,.45)';
+  g.textAlign='center'; g.font=Math.round(H*0.075)+'px system-ui,sans-serif';
+  for(var i=0;i<=t.lIn0;i++){
+    var x=i*MM_IN*mm;
+    g.lineWidth=(i%2===0)?2:1;
+    g.beginPath(); g.moveTo(x,H); g.lineTo(x,H-(i%2===0?H*0.12:H*0.07)); g.stroke();
+    if(i%2===0 && i>0 && i<t.lIn0) g.fillText(i+'"', x, H-H*0.15);
+  }
+  /* centre line */
+  g.strokeStyle='#0a6ed1'; g.lineWidth=Math.max(2,H*0.012);
+  g.beginPath(); g.moveTo(cx,0); g.lineTo(cx,H); g.stroke();
+  /* outline */
+  g.strokeStyle='rgba(0,0,0,.55)'; g.lineWidth=Math.max(2,H*0.01);
+  g.strokeRect(1,1,W-2,H-2);
+}
+
+function tapeCanvas(){
+  var t=state.tape;
+  t.lIn0=TAPE.lIn;
+  tapeCv.width=t.pxW; tapeCv.height=t.pxH;
+  var g=tapeCv.getContext('2d'), W=tapeCv.width, H=tapeCv.height;
+  g.clearRect(0,0,W,H);
+  g.fillStyle='#ffffff'; g.fillRect(0,0,W,H);
+  if(state.tapeKind==='guide') drawTapeGuide(g,W,H,t);
+  else if(state.tapeKind==='art'){
+    var img=tapeImgs[state.tapeIndex];
+    if(img && img.complete && img.naturalWidth){
+      g.imageSmoothingQuality='high'; g.drawImage(img,0,0,W,H);
+    }
+  }
+  /* adhesive ends, painted last — they are tape, not print */
+  var e=t.E/t.L*W;
+  g.fillStyle='#e7e3da'; g.fillRect(0,0,e,H); g.fillRect(W-e,0,e,H);
+  g.strokeStyle='rgba(0,0,0,.22)'; g.lineWidth=Math.max(1,H*0.006);
+  g.beginPath(); g.moveTo(e,0); g.lineTo(e,H); g.moveTo(W-e,0); g.lineTo(W-e,H); g.stroke();
+  return tapeCv;
+}
+
+function refreshTape(){
+  tapeCanvas();
+  tapeTex.needsUpdate=true;
+  var t=state.tape, n=document.getElementById('tapenote');
+  if(state.tapeKind==='art'){
+    var img=tapeImgs[state.tapeIndex];
+    if(img && img.naturalWidth){
+      var want=t.L/t.W, got=img.naturalWidth/img.naturalHeight;
+      var off=Math.abs(got-want)/want*100;
+      n.className = off>2 ? 'note warn' : 'note';
+      n.textContent = img.naturalWidth+' × '+img.naturalHeight+' px · '+
+        (off>2 ? 'aspect is '+off.toFixed(0)+'% off the '+t.pxW+' × '+t.pxH+
+                 ' tape and will be stretched.' : 'matches the tape aspect.');
+    } else { n.className='note'; n.textContent='Loading…'; }
+  } else if(state.tapeKind==='guide'){
+    n.className='note';
+    n.textContent='Zone guide drawn at '+t.pxW+' × '+t.pxH+' px.';
+  } else { n.className='note'; n.textContent='Blank tape — no artwork applied.'; }
+}
+
+/* ---------------------------------------------------------------- exports */
+function download(url, name){
+  var a=document.createElement('a'); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function snapshot(){
+  var f=parseInt(document.getElementById('scale').value,10);
+  var withBg=document.getElementById('bg').checked;
+  var dpr=Math.min(devicePixelRatio,2);
+  renderer.setPixelRatio(dpr*f);
+  resize(); renderer.render(scene,camera);
+  var src=renderer.domElement, out=src;
+  if(withBg){
+    out=document.createElement('canvas'); out.width=src.width; out.height=src.height;
+    var g=out.getContext('2d');
+    var grd=g.createRadialGradient(out.width*0.5,out.height*0.18,0,
+                                   out.width*0.5,out.height*0.18,out.width*0.85);
+    grd.addColorStop(0,'#40464f'); grd.addColorStop(.48,'#23262c'); grd.addColorStop(1,'#131519');
+    g.fillStyle=grd; g.fillRect(0,0,out.width,out.height);
+    g.drawImage(src,0,0);
+  }
+  download(out.toDataURL('image/png'), 'fields-bowl-view.png');
+  renderer.setPixelRatio(dpr); resize();
+}
+
+function dielineCanvas(){
+      var s=state.spec, PPMM=300/25.4;
+      var sw=s.pxW, sh=s.pxH;
+      var src=composite(document.createElement('canvas'), sw, sh);
+      var sd=src.getContext('2d').getImageData(0,0,sw,sh).data;
+
+      var hs=s.sweep/2;
+      var rIn=s.rhoIn-BLEED, rOut=s.rhoOut+BLEED;
+      var box=sectorBox(rIn, rOut, hs + BLEED/s.rhoIn);
+      var W=Math.round(box.w*PPMM), H=Math.round(box.h*PPMM);
+      var out=document.createElement('canvas'); out.width=W; out.height=H;
+      var octx=out.getContext('2d');
+      var img=octx.createImageData(W,H), od=img.data;
+      var pxmm=1/PPMM;
+
+      for(var y=0;y<H;y++){
+        var my=box.minY + (y+0.5)*pxmm;
+        for(var x=0;x<W;x++){
+          var mx=box.minX + (x+0.5)*pxmm;
+          var rho=Math.hypot(mx,my);
+          if(rho<1e-6) continue;
+          var phi=Math.atan2(mx,-my);
+          /* signed distance to the sector, in mm */
+          var dr=Math.max(s.rhoIn-rho, rho-s.rhoOut, 0);
+          var da=Math.max(Math.abs(phi)-hs, 0)*rho;
+          var dist=Math.hypot(dr,da);
+          if(dist>BLEED) continue;
+          var cov=Math.min(1, Math.max(0,(BLEED-dist)/pxmm));
+          if(dist<=0) cov=1;
+
+          var u=phi/s.sweep+0.5; u-=Math.floor(u);
+          var v=(rho-s.rhoIn)/s.slant; if(v<0)v=0; else if(v>1)v=1;
+          var fx=u*(sw-1), fy=(1-v)*(sh-1);
+          var x0=fx|0, y0=fy|0, tx=fx-x0, ty=fy-y0;
+          var x1=(x0+1)%sw, y1=Math.min(y0+1,sh-1);
+          var i00=(y0*sw+x0)*4, i10=(y0*sw+x1)*4, i01=(y1*sw+x0)*4, i11=(y1*sw+x1)*4;
+          var w00=(1-tx)*(1-ty), w10=tx*(1-ty), w01=(1-tx)*ty, w11=tx*ty;
+          var a00=sd[i00+3], a10=sd[i10+3], a01=sd[i01+3], a11=sd[i11+3];
+          /* Alpha-weighted sample. The strip is no longer opaque everywhere —
+             the rim band carries no ink — so unweighted RGB would drag
+             transparent black into the result and fringe the edges. */
+          var aa = w00*a00 + w10*a10 + w01*a01 + w11*a11;
+          if(aa<=0.5) continue;                        // no ink here
+          var o=(y*W+x)*4;
+          for(var ch=0; ch<3; ch++){
+            od[o+ch] = (w00*a00*sd[i00+ch] + w10*a10*sd[i10+ch]
+                      + w01*a01*sd[i01+ch] + w11*a11*sd[i11+ch]) / aa;
+          }
+          od[o+3] = cov*aa;
+        }
+      }
+      octx.putImageData(img,0,0);
+      return out;
+}
+function dielinePNG(){
+  document.body.classList.add('busy');
+  setTimeout(function(){
+    try{ download(dielineCanvas().toDataURL('image/png'),'fields-bowl-dieline-300dpi.png'); }
+    finally { document.body.classList.remove('busy'); }
+  },40);
+}
+
+function dielineSVGText(){
+  var s=state.spec, hs=s.sweep/2;
+  var box=sectorBox(s.rhoIn-BLEED, s.rhoOut+BLEED, hs+BLEED/s.rhoIn);
+  function ring(rIn,rOut,half){
+    var d=[], i, t, N=360;
+    for(i=0;i<=N;i++){ t=-half+2*half*i/N;
+      d.push((i?'L':'M')+(rIn*Math.sin(t)-box.minX).toFixed(3)+' '+(-rIn*Math.cos(t)-box.minY).toFixed(3)); }
+    for(i=N;i>=0;i--){ t=-half+2*half*i/N;
+      d.push('L'+(rOut*Math.sin(t)-box.minX).toFixed(3)+' '+(-rOut*Math.cos(t)-box.minY).toFixed(3)); }
+    return d.join(' ')+' Z';
+  }
+  var svg=
+'<svg xmlns="http://www.w3.org/2000/svg" width="'+box.w.toFixed(2)+'mm" height="'+box.h.toFixed(2)+'mm"'+
+' viewBox="0 0 '+box.w.toFixed(3)+' '+box.h.toFixed(3)+'">\n'+
+'<title>Fields '+PRESETS[state.preset].label+' bowl wrap die-line</title>\n'+
+'<desc>Top OD '+s.dTop+' mm, base OD '+s.dBot+' mm, height '+s.H+' mm. Units: millimetres.</desc>\n'+
+'<g fill="none" stroke-width="0.25">\n'+
+'  <path id="bleed" stroke="#00A0FF" d="'+ring(s.rhoIn-BLEED, s.rhoOut+BLEED, hs+BLEED/s.rhoIn)+'"/>\n'+
+'  <path id="cut"   stroke="#FF0000" d="'+ring(s.rhoIn, s.rhoOut, hs)+'"/>\n'+
+'  <path id="safe"  stroke="#00B050" stroke-dasharray="2 2" d="'+
+      ring(s.rhoIn+BASE_SAFE, s.rhoOut-RIM_SAFE, hs)+'"/>\n'+
+'</g>\n</svg>\n';
+  return svg;
+}
+function dielineSVG(){
+  download('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(dielineSVGText()),
+           'fields-bowl-dieline.svg');
+}
+
+function tapeSpecText(){
+  var t=state.tape, q=PRESETS[state.preset];
+  return [
+    'FIELDS BOWL — PRINTED TAPE SPEC',
+    '',
+    'Bowl: '+q.label+' natural kraft, '+q.dTop+' × '+q.dBot+' × '+q.H+' mm, clear lid',
+    '',
+    'Tape',
+    '  Size             '+n2(t.L)+' × '+n2(t.W)+'  ('+n(t.L,1)+' × '+n(t.W,1)+' mm)',
+    '  Artwork @ 300dpi '+t.pxW+' × '+t.pxH+' px, long axis horizontal',
+    '  Adhesive ends    '+n2(t.E)+' at each end (not printed)',
+    '  Printed length   '+n2(t.printed),
+    '',
+    'Where the tape lands, measured from the centre outward',
+    '  Bowl top (lid)   '+n2(2*t.sLid)+' centred — put the words here',
+    '  Bowl side        '+n2(t.sWall-t.sLid)+' down each wall',
+    '  Underside        '+n2(t.half-t.sWall)+' onto the base at each end',
+    '',
+    '  Bowl top span    '+n2(t.topSpan)+' ('+n(t.topSpan,0)+' mm) across the lid',
+    '  Path available   '+n2(t.avail*2)+' total; tape uses '+n2(t.L)
+  ].join('\n');
+}
+function tapePNG(){
+  download(tapeCanvas().toDataURL('image/png'), 'fields-tape-artwork-300dpi.png');
+}
+function tapeSVG(){
+  var t=state.tape, L=t.L, W=t.W, E=t.E, sL=t.sLid, sW=t.sWall, c=L/2;
+  function rect(x,w,stroke,dash,id){
+    return '  <rect id="'+id+'" x="'+x.toFixed(2)+'" y="0" width="'+w.toFixed(2)+
+           '" height="'+W.toFixed(2)+'" stroke="'+stroke+'"'+
+           (dash?' stroke-dasharray="2 2"':'')+'/>\n';
+  }
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+L.toFixed(2)+'mm" height="'+
+    W.toFixed(2)+'mm" viewBox="0 0 '+L.toFixed(2)+' '+W.toFixed(2)+'">\n'+
+    '<title>Fields printed tape template</title>\n'+
+    '<desc>'+TAPE.lIn+' x '+TAPE.wIn+' in. Units: millimetres. Outer '+
+      TAPE.endIn+' in at each end is adhesive.</desc>\n'+
+    '<g fill="none" stroke-width="0.25">\n'+
+    rect(0, L, '#FF0000', false, 'cut')+
+    rect(E, L-2*E, '#00B050', true, 'printed-area')+
+    rect(c-sL, 2*sL, '#0070C0', true, 'bowl-top-words')+
+    '  <line x1="'+c.toFixed(2)+'" y1="0" x2="'+c.toFixed(2)+'" y2="'+W.toFixed(2)+
+      '" stroke="#0070C0"/>\n'+
+    '  <line x1="'+(c-sW).toFixed(2)+'" y1="0" x2="'+(c-sW).toFixed(2)+'" y2="'+
+      W.toFixed(2)+'" stroke="#808080"/>\n'+
+    '  <line x1="'+(c+sW).toFixed(2)+'" y1="0" x2="'+(c+sW).toFixed(2)+'" y2="'+
+      W.toFixed(2)+'" stroke="#808080"/>\n'+
+    '</g>\n</svg>\n';
+  download('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),
+           'fields-tape-template.svg');
+}
+
+/* -------------------------------------------------------------------- UI */
+/* ---- concept toggle ---- */
+var modeHost=document.getElementById('modes');
+MODES.forEach(function(m){
+  var b=document.createElement('button');
+  b.setAttribute('aria-pressed','false'); b.dataset.key=m.key;
+  b.innerHTML='<b>'+m.name+'</b><span>'+m.note+'</span>';
+  b.addEventListener('click',function(){ pickMode(m.key); });
+  modeHost.appendChild(b);
+});
+function pickMode(k){
+  state.mode=k;
+  document.body.dataset.mode=k;
+  Array.prototype.forEach.call(modeHost.children,function(b){
+    b.setAttribute('aria-pressed', b.dataset.key===k ? 'true':'false');
+  });
+  document.getElementById('hint').textContent = k==='tape'
+    ? 'Drag to orbit · scroll to zoom · pick a tape artwork on the right'
+    : 'Drag to orbit · scroll to zoom · double-click to reset';
+  rebuild();
+  frame(); cam.tR=Math.max(state.spec.dTop, state.spec.H*1.6)*2.7;
+}
+
+/* ---- tape artwork (baked in, not uploaded) ---- */
+var artHost=document.getElementById('tapeArt');
+TAPE_ART.forEach(function(a, i){
+  var im=new Image();
+  im.onload=function(){
+    if(state.mode==='tape' && state.tapeKind==='art' && state.tapeIndex===i) refreshTape();
+  };
+  im.src=a.uri;
+  tapeImgs[i]=im;
+  var b=document.createElement('button');
+  b.setAttribute('aria-pressed','false');
+  b.innerHTML='<b>'+a.name+'</b>';
+  b.addEventListener('click',function(){ pickTape('art', i); });
+  artHost.appendChild(b);
+});
+if(!TAPE_ART.length)
+  artHost.innerHTML='<p class="note">No artwork baked in — add PNGs to the '+
+    '“Bowl Tape” folder and rerun tools/build.py.</p>';
+
+function pickTape(kind, i){
+  state.tapeKind=kind;
+  if(i!==undefined) state.tapeIndex=i;
+  Array.prototype.forEach.call(artHost.children,function(b, j){
+    if(b.tagName!=='BUTTON') return;
+    b.setAttribute('aria-pressed',
+      (kind==='art' && j===state.tapeIndex) ? 'true':'false');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tape]'),function(b){
+    b.classList.toggle('primary', b.getAttribute('data-tape')===kind);
+  });
+  refreshTape();
+}
+
+/* ---- bowl size presets ---- */
+var sizeHost=document.getElementById('sizes');
+PRESETS.forEach(function(q, i){
+  var b=document.createElement('button');
+  b.setAttribute('aria-pressed','false');
+  b.innerHTML='<b>'+q.label+'</b><span>'+q.dTop+' × '+q.dBot+' × '+q.H+' mm</span>';
+  b.addEventListener('click',function(){ pickSize(i); });
+  sizeHost.appendChild(b);
+});
+function pickSize(i){
+  var q=PRESETS[i];
+  state.preset=i; state.dTop=q.dTop; state.dBot=q.dBot; state.H=q.H;
+  Array.prototype.forEach.call(sizeHost.children,function(b,j){
+    b.setAttribute('aria-pressed', j===i ? 'true':'false');
+  });
+  document.getElementById('sizenote').textContent =
+    q.ml+' ml nominal · wide/'+q.form+' · '+q.src;
+  rebuild();
+  frame(); cam.tR=Math.max(state.spec.dTop, state.spec.H*1.6)*2.7;
+}
+
+/* ---- rim & interior liner ---- */
+var linerHost=document.getElementById('liners');
+LINERS.forEach(function(l){
+  var b=document.createElement('button');
+  b.setAttribute('aria-pressed','false'); b.dataset.key=l.key;
+  b.innerHTML='<b>'+l.name+'</b><span>'+l.note+'</span>';
+  b.addEventListener('click',function(){ pickLiner(l.key); });
+  linerHost.appendChild(b);
+});
+function pickLiner(k){
+  state.liner=k;
+  Array.prototype.forEach.call(linerHost.children,function(b){
+    b.setAttribute('aria-pressed', b.dataset.key===k ? 'true':'false');
+  });
+  applyColors();
+}
+document.getElementById('spin').addEventListener('change',function(){ spinning=this.checked; });
+document.getElementById('snap').addEventListener('click',snapshot);
+document.getElementById('dlPng').addEventListener('click',dielinePNG);
+document.getElementById('tpPng').addEventListener('click',tapePNG);
+document.getElementById('tpSvg').addEventListener('click',tapeSVG);
+document.getElementById('tcopy').addEventListener('click',function(){
+  var b=this, txt=tapeSpecText();
+  function flash(m,ms){ b.textContent=m;
+    setTimeout(function(){ b.textContent='Copy spec to clipboard'; }, ms||1400); }
+  function fallback(){
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    var ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+    ta.remove();
+    if(ok) flash('Copied ✓'); else { console.log(txt); flash('Copy blocked — logged to console',2600); }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(txt).then(function(){ flash('Copied ✓'); }, fallback);
+  else fallback();
+});
+document.getElementById('dlSvg').addEventListener('click',dielineSVG);
+document.getElementById('copy').addEventListener('click',function(){
+  /* navigator.clipboard is unavailable on file:// (not a secure context), which
+     is the main way this page gets opened — so fall back to execCommand. */
+  var b=this, txt=specText();
+  function flash(m,ms){ b.textContent=m; setTimeout(function(){ b.textContent='Copy spec to clipboard'; }, ms||1400); }
+  function fallback(){
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    var ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+    ta.remove();
+    if(ok) flash('Copied ✓');
+    else { console.log(txt); flash('Copy blocked — spec logged to console', 2600); }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(txt).then(function(){ flash('Copied ✓'); }, fallback);
+  else fallback();
+});
+
+/* wrap artwork */
+/* The strip aspect changes with every bowl size, so the demo and guide wraps
+   are drawn to fit the current spec rather than shipped as fixed-aspect PNGs.
+   Only the lockup itself is a static asset. */
+function stripCanvas(){
+  var c=document.createElement('canvas');
+  c.width=state.spec.pxW; c.height=state.spec.pxH; return c;
+}
+
+function drawGuide(){
+  var c=stripCanvas(), s=state.spec, g=c.getContext('2d');
+  var W=c.width, H=c.height, MM=H/s.slant, i, x, y;
+  function yAt(mm){ return (1-mm/s.slant)*H; }
+  function fs(px){ return Math.max(11, Math.round(px))+'px system-ui,sans-serif'; }
+  var sm=fs(H*0.045), md=fs(H*0.065);
+
+  /* rim roll + base crimp exclusion zones */
+  [[0, yAt(s.slant-RIM_SAFE)], [yAt(BASE_SAFE), H]].forEach(function(z){
+    g.fillStyle='rgba(255,0,128,.11)'; g.fillRect(0,z[0],W,z[1]-z[0]);
+    g.strokeStyle='rgba(255,0,128,.34)'; g.lineWidth=Math.max(2,H*0.004);
+    g.beginPath();
+    for(x=-H; x<W; x+=H*0.05){ g.moveTo(x,z[1]); g.lineTo(x+(z[1]-z[0]),z[0]); }
+    g.stroke();
+  });
+  /* safe-area boundaries */
+  g.strokeStyle='rgba(255,0,128,.92)'; g.lineWidth=Math.max(3,H*0.007);
+  g.setLineDash([H*0.05, H*0.04]);
+  [s.slant-RIM_SAFE, BASE_SAFE].forEach(function(mm){
+    y=yAt(mm); g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke();
+  });
+  g.setLineDash([]);
+  /* circumference grid every 30° */
+  g.textBaseline='top';
+  for(i=0;i<360;i+=30){
+    x=i/360*W; var major=i%90===0;
+    g.strokeStyle=major?'rgba(0,0,0,.55)':'rgba(0,0,0,.26)';
+    g.lineWidth=major?Math.max(3,H*0.006):Math.max(2,H*0.004);
+    g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke();
+    g.fillStyle='rgba(0,0,0,.62)'; g.font=sm;
+    g.fillText(i+'°', x+H*0.018, yAt(s.slant-RIM_SAFE)+H*0.02);
+  }
+  /* slant rules every 10 mm */
+  g.strokeStyle='rgba(0,0,0,.26)'; g.lineWidth=Math.max(2,H*0.003);
+  for(i=10;i<s.slant;i+=10){
+    y=yAt(i); g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke();
+    g.fillStyle='rgba(0,0,0,.5)'; g.font=sm;
+    g.fillText(i+' mm', H*0.02, y-H*0.058);
+  }
+  /* seam and front centre */
+  g.strokeStyle='#d40000'; g.lineWidth=Math.max(5,H*0.012);
+  [0.5, W-0.5].forEach(function(px){ g.beginPath(); g.moveTo(px,0); g.lineTo(px,H); g.stroke(); });
+  g.fillStyle='#d40000'; g.font=md;
+  g.fillText('SEAM / GLUE LAP', H*0.03, H*0.46);
+  g.strokeStyle='#0a6ed1'; g.lineWidth=Math.max(4,H*0.009);
+  g.beginPath(); g.moveTo(W/2,0); g.lineTo(W/2,H); g.stroke();
+  g.fillStyle='#0a5bb0'; g.fillText('FRONT CENTRE', W/2+H*0.03, H*0.46);
+  /* zone captions */
+  g.fillStyle='#c0006a'; g.font=md;
+  g.fillText('PRINT STOPS — no ink above this line ('+RIM_SAFE+' mm)',
+             W*0.5-H*1.9, H*0.015);
+  g.fillText('BASE CRIMP — keep artwork above ('+BASE_SAFE+' mm)',
+             W*0.5-H*1.9, yAt(BASE_SAFE)+H*0.03);
+  return c;
+}
+
+/* Rebuilds whatever wrap is selected against the current spec. */
+function refreshWrap(){
+  var k=state.wrapKind, note=document.getElementById('wrapnote'), src=null, im;
+  if(k==='art'){
+    im=wrapImgs[state.wrapIndex];
+    if(im && im.complete && im.naturalWidth) src=im;
+  } else if(k==='template') src=drawGuide();
+  state.wrapSource=src;
+  if(k==='art'){
+    if(im && im.naturalWidth){
+      var want=state.spec.arcT/state.spec.slant, got=im.naturalWidth/im.naturalHeight;
+      var off=Math.abs(got-want)/want*100;
+      note.className = off>2 ? 'note warn' : 'note';
+      note.textContent = im.naturalWidth+' × '+im.naturalHeight+' px · '+
+        (off>2 ? 'aspect is '+off.toFixed(0)+'% off this size\u2019s strip ('+
+                 state.spec.pxW+' × '+state.spec.pxH+') and will be stretched.'
+               : 'matches the strip aspect.');
+    } else { note.className='note'; note.textContent='Loading…'; }
+  } else if(k==='none'){
+    note.className='note'; note.textContent='Flood colour only — no artwork applied.';
+  } else {
+    note.className='note';
+    note.textContent='Guide drawn at '+state.spec.pxW+' × '+state.spec.pxH+' px for this size.';
+  }
+  refreshTexture();
+}
+var wrapHost=document.getElementById('wrapArt');
+WRAP_ART.forEach(function(a, i){
+  var im=new Image();
+  im.onload=function(){
+    if(state.mode==='allover' && state.wrapKind==='art' && state.wrapIndex===i) refreshWrap();
+  };
+  im.src=a.uri;
+  wrapImgs[i]=im;
+  var b=document.createElement('button');
+  b.setAttribute('aria-pressed','false');
+  b.innerHTML='<b>'+a.name+'</b>';
+  b.addEventListener('click',function(){ pickWrap('art', i); });
+  wrapHost.appendChild(b);
+});
+if(!WRAP_ART.length)
+  wrapHost.innerHTML='<p class="note">No artwork baked in — add PNGs to the '+
+    '“AOP Bowl” folder and rerun tools/build.py.</p>';
+
+function pickWrap(kind, i){
+  state.wrapKind=kind;
+  if(i!==undefined) state.wrapIndex=i;
+  Array.prototype.forEach.call(wrapHost.children,function(b, j){
+    if(b.tagName!=='BUTTON') return;
+    b.setAttribute('aria-pressed',
+      (kind==='art' && j===state.wrapIndex) ? 'true':'false');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-wrap]'),function(b){
+    b.classList.toggle('primary', b.getAttribute('data-wrap')===kind);
+  });
+  refreshWrap();
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-wrap]'),function(b){
+  b.addEventListener('click',function(){ pickWrap(b.getAttribute('data-wrap')); });
+});
+/* Scripting handle — drive exports from the console or a headless run. */
+window.FieldsBowl={
+  /* view(azimuth°, elevation° from straight down, distance mm) */
+  view: function(az, el, dist){
+    if(az!==undefined)   cam.tTh=az*DEG;
+    if(el!==undefined)   cam.tPh=Math.max(0.10, Math.min(1.62, el*DEG));
+    if(dist!==undefined) cam.tR=dist;
+  },
+  materials:   { wall:matWall, rim:matRim, inner:matInner, base:matBase,
+                 lid:matLid, tape:matTape },
+  mode:        function(k){ pickMode(k); },
+  sizePicker:  function(on){
+    document.getElementById('sizeSection').classList.toggle('stowed', !on);
+  },
+  pickSize:    function(i){ pickSize(i); },
+  tapeSpec:    function(){ return state.tape; },
+  tapeCanvas:  tapeCanvas,
+  tapeArt:     function(i){ pickTape('art', i); },
+  wrapArt:     function(i){ pickWrap('art', i); },
+  renderer:    renderer,
+  lights:      { key:key, fill:fill, back:back, amb:amb },
+  spec:        function(){ return state.spec; },
+  strip:       function(){ return composite(document.createElement('canvas'),
+                                            state.spec.pxW, state.spec.pxH); },
+  dielineCanvas: dielineCanvas,
+  dielineSVG:    dielineSVGText
+};
+
+/* ------------------------------------------------------------------ boot */
+document.getElementById('sizeSection').classList.toggle('stowed', !SHOW_SIZE_PICKER);
+document.body.dataset.mode='allover';
+Array.prototype.forEach.call(modeHost.children,function(b){
+  b.setAttribute('aria-pressed', b.dataset.key==='allover' ? 'true':'false');
+});
+pickSize(DEFAULT_PRESET);
+pickLiner('match');
+pickTape(TAPE_ART.length ? 'art' : 'guide', 0);
+pickWrap(WRAP_ART.length ? 'art' : 'template', 0);
+cam.r=cam.tR;
+resize(); tick();
+})();
+</script>
