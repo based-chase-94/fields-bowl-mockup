@@ -147,7 +147,7 @@ All three check out against the geometry:
 |---|---|
 | Repeats around the bowl | 2, evenly spaced |
 | Seam | clear on both edges — nothing crosses the glue lap |
-| Top edge | clears the print stop by **5.9 mm** (option 1) / **8.9 mm** (options 2–3) |
+| Top edge | clears the print stop by **5.9 mm** (1) / **8.9 mm** (2) / **11.2 mm** (3) |
 | Bottom edge | ink reaches the base edge, so the stem prints to the bottom of the bowl |
 
 Only type sits inside the crimp zone's 6 mm, and nothing critical does, so the
