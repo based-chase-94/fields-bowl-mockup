@@ -125,19 +125,30 @@ between screen, CMYK and coated stock.
 
 The all-over artwork is **baked in** from the **`AOP Bowl`** folder beside
 `bowl-viewer` — there is no uploader. Drop a PNG in and rerun
-`python3 tools/build.py`; it becomes a button labelled from the filename, or
-"All-over wrap" while the folder holds a single file.
+`python3 tools/build.py`; it becomes a button in the viewer.
 
-Current artwork: `working-file copy.png`, **6827 × 838 px** — exactly the 44 oz
-strip, with a transparent ground so the Fields yellow shows through the poppy
-ink. Checked against the geometry:
+**A leading numeric prefix sets the order and is stripped from the label**, so
+`01-poppy-flowers.png` shows as "Poppy flowers". That is how the options are
+sequenced — rename to reorder, no code change.
+
+Three options, all **6827 × 838 px** with a transparent ground so the Fields
+yellow shows through. The wordmark is poppy `#FD2E02` throughout; only the
+dandelion changes:
+
+| # | File | Dandelion |
+|---|---|---|
+| 1 | `01-poppy-flowers.png` | poppy `#FD2E02` — tonal against the yellow |
+| 2 | `02-burgundy-flowers.png` | burgundy `#691934` |
+| 3 | `03-green-flowers.png` | forest `#1E3522` |
+
+All three check out against the geometry:
 
 | Check | Result |
 |---|---|
-| Repeats around the bowl | 2, evenly spaced (33.7 % each, ~16 % gaps) |
-| Seam | clear — ink starts at 7.1 % and ends at 90.7 %, so nothing crosses it |
-| Top edge | clears the print stop by **5.9 mm** |
-| Bottom edge | runs to the strip edge, so the stem prints to the bottom of the bowl — the intended look |
+| Repeats around the bowl | 2, evenly spaced |
+| Seam | clear on both edges — nothing crosses the glue lap |
+| Top edge | clears the print stop by **5.9 mm** (option 1) / **8.9 mm** (options 2–3) |
+| Bottom edge | ink reaches the base edge, so the stem prints to the bottom of the bowl |
 
 Only type sits inside the crimp zone's 6 mm, and nothing critical does, so the
 artwork bleeds off the bottom exactly as intended.

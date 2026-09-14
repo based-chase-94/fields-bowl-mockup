@@ -15,7 +15,7 @@ uploader by design.
 
     python3 tools/build.py
 """
-import base64, json, os
+import base64, json, os, re
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TPL = os.path.join(HERE, "tools", "index.template.html")
@@ -38,7 +38,12 @@ def data_uri(path):
 
 
 def label_from(filename):
-    stem = os.path.splitext(filename)[0].replace("-", " ").replace("_", " ").strip()
+    """Button label from the filename. A leading numeric prefix orders the
+    buttons and is stripped from the label, so 01-poppy-flowers.png shows as
+    "Poppy flowers"."""
+    stem = os.path.splitext(filename)[0]
+    stem = re.sub(r"^\d+[-_ ]+", "", stem)
+    stem = stem.replace("-", " ").replace("_", " ").strip()
     return stem[:1].upper() + stem[1:]
 
 

@@ -116,8 +116,11 @@ list is `PRESETS`.
 
 All artwork is baked in from the client folders next to `bowl-viewer` —
 **`AOP Bowl`** for the all-over wrap, **`Bowl Tape`** for the band. Drop a PNG
-in and rerun the build: it becomes a button, labelled from the filename and
-ordered alphabetically. Neither viewer has an uploader, by design.
+in and rerun the build: it becomes a button. Neither viewer has an uploader, by
+design.
+
+A leading numeric prefix orders the buttons and is stripped from the label, so
+`01-poppy-flowers.png` shows as "Poppy flowers". Rename to reorder.
 
 `make_assets.py` only re-extracts the lockup from the signage PDF — you need it
 just if that artwork changes:
