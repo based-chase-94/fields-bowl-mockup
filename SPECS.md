@@ -292,20 +292,20 @@ filename, and a numeric prefix (`01-`, `02-`) controls the order.
 
 ### Fit check against the lid
 
-All three share one layout. Its ink spans **−84.9 to +83.9 mm** from the tape
+All three share one layout. Its ink spans **−83.8 to +84.2 mm** from the tape
 centre, against a lid zone of **±93.6 mm** — so the whole mark, dandelion
-included, sits on the flat top with roughly **9 mm (0.35 in) of clearance at
-each end**. Only flat colour runs down the bowl sides.
+included, sits on the flat top with **9.4 mm (0.37 in) of clearance at each
+end**. Only flat colour runs down the bowl sides.
 
 That clearance is the number to watch if the bowl size changes, since the lid
 zone follows the bowl's top diameter:
 
 | Bowl | Lid zone | Clearance |
 |---|---|---|
-| 44 oz (184 mm) | ±93.6 mm | +8.7 mm |
-| 48 oz (184.9 mm) | ±94.1 mm | +9.2 mm |
-| 49 / 51 oz (180 mm) | ±91.6 mm | +6.7 mm |
-| 52 oz (185 mm) | ±94.1 mm | +9.2 mm |
+| 44 oz (184 mm) | ±93.6 mm | +9.4 mm |
+| 48 oz (184.9 mm) | ±94.1 mm | +9.9 mm |
+| 49 / 51 oz (180 mm) | ±91.6 mm | +7.4 mm |
+| 52 oz (185 mm) | ±94.1 mm | +9.9 mm |
 
 The layout clears every candidate size, tightest on the 180 mm bowls. Re-run the
 check if the artwork grows.
