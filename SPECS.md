@@ -131,15 +131,20 @@ The all-over artwork is **baked in** from the **`AOP Bowl`** folder beside
 `01-poppy-flowers.png` shows as "Poppy flowers". That is how the options are
 sequenced — rename to reorder, no code change.
 
-Three options, all **6827 × 838 px** with a transparent ground so the Fields
+Four options, all **6827 × 838 px** with a transparent ground so the Fields
 yellow shows through. The wordmark is poppy `#FD2E02` throughout; only the
-dandelion changes:
+dandelion changes. Option 1 loads by default:
 
 | # | File | Dandelion |
 |---|---|---|
-| 1 | `01-poppy-flowers.png` | poppy `#FD2E02` — tonal against the yellow |
-| 2 | `02-burgundy-flowers.png` | burgundy `#691934` |
-| 3 | `03-green-flowers.png` | forest `#1E3522` |
+| 1 | `01-all-red.png` | poppy `#FD2E02` — single ink, everything one colour |
+| 2 | `02-poppy-flowers.png` | poppy `#FD2E02` |
+| 3 | `03-burgundy-flowers.png` | burgundy `#691934` |
+| 4 | `04-green-flowers.png` | forest `#1E3522` |
+
+Option 1 is a **single-ink design** — worth flagging to the converter, since a
+one-colour wrap on a flood-yellow bowl may price differently from the two-colour
+options.
 
 All three check out against the geometry:
 
@@ -147,7 +152,7 @@ All three check out against the geometry:
 |---|---|
 | Repeats around the bowl | 2, evenly spaced |
 | Seam | clear on both edges — nothing crosses the glue lap |
-| Top edge | clears the print stop by **5.9 mm** (1) / **8.9 mm** (2) / **11.2 mm** (3) |
+| Top edge | clears the print stop by **11.2 mm** (1, 4) / **5.9 mm** (2) / **8.9 mm** (3) |
 | Bottom edge | ink reaches the base edge, so the stem prints to the bottom of the bowl |
 
 Only type sits inside the crimp zone's 6 mm, and nothing critical does, so the
