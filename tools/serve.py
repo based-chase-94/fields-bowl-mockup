@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Static server for local preview. `python3 tools/serve.py [port]` then open
 http://localhost:8123/ . Exists because `python3 -m http.server` calls
-os.getcwd() at import time, which the synced CloudStorage path rejects."""
+os.getcwd() at import time, which some synced-folder paths reject."""
 import os, sys, functools, http.server, socketserver
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
