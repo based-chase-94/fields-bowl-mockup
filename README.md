@@ -24,10 +24,11 @@ Then open <http://localhost:8123/>.
 | Control | Notes |
 |---|---|
 | Drag / scroll / double-click | Orbit, zoom, reset |
-| **Concept** | *All-over print* (flood-printed bowl) or *Printed tape* (kraft bowl, clear lid, band over the top). Switching rebuilds the whole model |
+| **Concept** | *All-over print* (flood-printed bowl), *Printed tape* (kraft bowl, clear lid, band over the top), or *Die-cut sticker* (plain bowl, applied label). Switching rebuilds the whole model |
 | **Tape artwork** *(tape mode)* | Colourways baked in from the `Bowl Tape` folder — click to switch. *Guide* shows the zone template, *Blank* is unprinted tape. No uploader: add artwork to that folder and rebuild |
 | **Bowl size** | Five stock sizes across 44–52 oz, from real manufacturer spec sheets. Switching rebuilds the model and recalculates every die-line figure |
-| **Rim & interior** | The liner — printed to the rim, white board, or natural kraft. Ink stops 5 mm below the rim edge, so on *White* and *Natural kraft* that band and the bead show bare board |
+| **Rim & interior** *(all-over mode)* | The liner — printed to the rim, white board, or natural kraft. Ink stops 5 mm below the rim edge, so on *White* and *Natural kraft* that band and the bead show bare board |
+| **Bowl colour** *(sticker mode)* | White or natural kraft, for the unprinted bowl the sticker goes on |
 | **Wrap artwork** *(all-over mode)* | Artwork baked in from the `AOP Bowl` folder — click to switch. *Guide* is the calibration grid, *None* is flood colour only |
 | **Save view as PNG** | 1×/2×/4×, transparent background unless you tick the backdrop |
 | **Die-line PNG** | 300 dpi, 3 mm bleed, alpha outside the cut |
@@ -114,10 +115,20 @@ rather than shipped as PNGs, because the strip aspect ratio changes with every
 bowl size. Safe-area sizes live in `RIM_SAFE` / `BASE_SAFE` / `BLEED`; the size
 list is `PRESETS`.
 
-All artwork is baked in from the client folders next to `bowl-viewer` —
-**`AOP Bowl`** for the all-over wrap, **`Bowl Tape`** for the band. Drop a PNG
-in and rerun the build: it becomes a button. Neither viewer has an uploader, by
-design.
+All artwork is baked in from the client's artwork folders — **`AOP Bowl`** for
+the all-over wrap, **`Bowl Tape`** for the band, **`Bowl Sticker`** for the
+die-cut label. Drop a PNG in and rerun the build: it becomes a button. The
+viewer has no uploader, by design.
+
+Those folders live in the client's working directory, not in this repo. **This
+repo is public, so the path is not committed.** Point the build at it once:
+
+```bash
+echo '/path/to/Fields' > artwork-path.local      # git-ignored
+```
+
+or set `FIELDS_ARTWORK` in the environment. The build fails with instructions if
+neither is set.
 
 A leading numeric prefix orders the buttons and is stripped from the label, so
 `01-poppy-flowers.png` shows as "Poppy flowers". Rename to reorder.

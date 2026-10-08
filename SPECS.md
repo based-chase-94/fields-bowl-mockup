@@ -317,6 +317,53 @@ check if the artwork grows.
 
 ---
 
+## 7. Concept three — die-cut sticker
+
+A plain bowl with a die-cut sticker applied to the side. No printing on the
+bowl, so the only artwork is the label. The viewer offers the bowl in **white**
+or **natural kraft**.
+
+### Sticker
+
+| | |
+|---|---|
+| Size | **3.18 × 1.38 in** (80.8 × 35.0 mm) |
+| At 300 dpi | 954 × 413 px |
+| Supplied art | `01-fields-logo.png`, 938 × 406 px — **295 dpi** at final size |
+| Construction | white die-cut shape with the poppy `#FC2E02` logo |
+
+Width is the client's 3.18 in; height follows the artwork's own 2.31:1 aspect.
+The supplied file lands at 295 dpi, near enough to 300 for print — but it is at
+its limit, so do not scale it up.
+
+### How it sits on the bowl
+
+| | |
+|---|---|
+| Bowl wall (slant) | 70.94 mm |
+| Live band, rim curl to base crimp | 59.94 mm |
+| Clearance above and below | **12.5 mm each**, centred |
+| Share of circumference | 14.0 % of 578 mm |
+| Wrap around the bowl | **50°** |
+
+That 50° matters more than the clearance. A flat die-cut label spanning 50° of a
+tapered cone cannot lie flat — the edges curve away from the viewer, and on the
+real bowl the corners want to lift. Worth confirming with the converter whether
+the face stock will conform, or whether the sticker should come down nearer
+2.5 in to reduce the wrap.
+
+The viewer composites the sticker into the wall strip rather than modelling it
+as a separate decal. The strip is isotropic — the same millimetres per pixel in
+both directions — so the label renders at true physical size and conforms to the
+cone the way an applied label does.
+
+### Artwork folder
+
+`Bowl Sticker` beside the other two, same convention: drop a PNG in, rerun
+`python3 tools/build.py`, numeric prefix orders and is stripped from the label.
+
+---
+
 ## Sources
 
 - [Bioleader — kraft paper compostable salad bowls](https://www.bioleaderpack.com/product/compostable-salad-bowls-kraft-paper/)

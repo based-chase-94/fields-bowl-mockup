@@ -22,10 +22,32 @@ TPL = os.path.join(HERE, "tools", "index.template.html")
 OUT = os.path.join(HERE, "index.html")
 EXT = (".png", ".jpg", ".jpeg")
 
+def artwork_root():
+    """Where the client's artwork folders live.
+
+    This repo is public, so the path is not committed: set FIELDS_ARTWORK, or
+    put the path in artwork-path.local (git-ignored) next to this repo.
+    """
+    env = os.environ.get("FIELDS_ARTWORK")
+    if env:
+        return env
+    cfg = os.path.join(HERE, "artwork-path.local")
+    if os.path.exists(cfg):
+        return open(cfg, encoding="utf-8").read().strip()
+    raise SystemExit(
+        "Artwork folder not configured.\n"
+        "  echo '/path/to/Fields' > artwork-path.local\n"
+        "  (or export FIELDS_ARTWORK=/path/to/Fields)"
+    )
+
+
+ROOT = artwork_root()
+
 # token -> (source folder, label to use when the folder holds a single file)
 ART = {
-    "__WRAP_ART__": (os.path.join(HERE, "..", "AOP Bowl"), "All-over wrap"),
-    "__TAPE_ART__": (os.path.join(HERE, "..", "Bowl Tape"), None),
+    "__WRAP_ART__":    (os.path.join(ROOT, "AOP Bowl"), "All-over wrap"),
+    "__TAPE_ART__":    (os.path.join(ROOT, "Bowl Tape"), None),
+    "__STICKER_ART__": (os.path.join(ROOT, "Bowl Sticker"), "Fields logo"),
 }
 
 MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}

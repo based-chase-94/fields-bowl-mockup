@@ -71,7 +71,11 @@
   .sub{color:var(--dim);font-size:11px;display:block;margin-top:2px}
   .stowed{display:none!important}
   body[data-mode="allover"] [data-when="tape"],
-  body[data-mode="tape"] [data-when="allover"]{display:none}
+  body[data-mode="allover"] [data-when="sticker"],
+  body[data-mode="tape"] [data-when="allover"],
+  body[data-mode="tape"] [data-when="sticker"],
+  body[data-mode="sticker"] [data-when="allover"],
+  body[data-mode="sticker"] [data-when="tape"]{display:none}
   .slot{font-size:11px}
   .slot b{font-weight:600}
   .pick code{color:var(--dim);font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
@@ -167,6 +171,30 @@
     <button class="act" id="copy" style="margin-top:10px">Copy spec to clipboard</button>
   </section>
 
+  <section data-when="sticker">
+    <h2>Bowl colour</h2>
+    <div id="bowlCols" class="opts"></div>
+  </section>
+
+  <section data-when="sticker">
+    <h2>Sticker artwork</h2>
+    <div id="stickerArt" class="opts"></div>
+    <p class="note" id="stickernote"></p>
+  </section>
+
+  <section data-when="sticker">
+    <h2>Sticker spec</h2>
+    <table class="spec">
+      <tr><th>Sticker size</th><td id="k_size"></td></tr>
+      <tr><th>At 300 dpi</th><td id="k_px"></td></tr>
+      <tr class="rule"><th>Bowl wall (slant)</th><td id="k_slant"></td></tr>
+      <tr><th>Live band height</th><td id="k_band"></td></tr>
+      <tr><th>Clearance above / below</th><td id="k_clear"></td></tr>
+      <tr class="rule"><th>Share of circumference</th><td id="k_share"></td></tr>
+    </table>
+    <p class="note" id="k_warn"></p>
+  </section>
+
   <section data-when="tape">
     <h2>Tape artwork</h2>
     <div id="tapeArt" class="opts"></div>
@@ -237,7 +265,8 @@ var DEG = Math.PI/180;
    and the build is rerun. */
 var WRAP_ART = __WRAP_ART__;
 var TAPE_ART = __TAPE_ART__;
-var wrapImgs = [], tapeImgs = [];
+var STICKER_ART = __STICKER_ART__;
+var wrapImgs = [], tapeImgs = [], stickerImgs = [];
 /* Fields yellow, sampled from the brand render. Single source of truth for the
    body colour — the client-facing build deliberately exposes no picker. */
 var BODY_COLOUR = '#FCE300';
@@ -286,8 +315,19 @@ var MM_IN = 25.4;
    adhesive, words centred on the bowl top. */
 var TAPE = { wIn:2.25, lIn:18, endIn:1.0 };
 var MODES = [
-  { key:'allover', name:'All-over print', note:'flood-printed bowl' },
-  { key:'tape',    name:'Printed tape',   note:'kraft bowl, lid, wrap band' }
+  { key:'allover', name:'All-over print',  note:'flood-printed bowl' },
+  { key:'tape',    name:'Printed tape',    note:'kraft bowl, lid, wrap band' },
+  { key:'sticker', name:'Die-cut sticker', note:'plain bowl, applied label' }
+];
+
+/* Third concept: a plain bowl with a die-cut sticker on the side. The sticker
+   is composited into the wall strip rather than modelled as separate geometry —
+   the strip is isotropic (same mm per pixel both ways), so it lands at true
+   physical size and conforms to the cone the way an applied label does. */
+var STICKER = { wIn:3.18 };
+var BOWL_COLOURS = [
+  { key:'white',   name:'White',         note:'bleached board', col:'#eeece6' },
+  { key:'natural', name:'Natural kraft', note:'recycled / compostable', col:null }
 ];
 
 /* ------------------------------------------------------------------ spec */
@@ -628,6 +668,7 @@ var bowl=null;
 var state={ mode:'allover', preset:DEFAULT_PRESET, liner:'match', body:BODY_COLOUR,
   tapeKind:'art',                    // 'art' | 'guide' | 'none'
   tapeIndex:0, tape:null,
+  stickerIndex:0, bowlColour:'white',
   dTop:0, dBot:0, H:0, spec:null,
   wrapKind:'art',       // 'art' | 'template' | 'none'
   wrapIndex:0,
@@ -636,7 +677,34 @@ var state={ mode:'allover', preset:DEFAULT_PRESET, liner:'match', body:BODY_COLO
   state.dTop=q.dTop; state.dBot=q.dBot; state.H=q.H; })();
 
 /* ------------------------------------------------------------- compositing */
+/* Sticker mode paints the board itself, not ink: the bowl colour fills the
+   whole strip and the die-cut sticker sits on top at true size. */
+function compositeSticker(canvas, w, h){
+  canvas.width=w; canvas.height=h;
+  var s=state.spec, g=canvas.getContext('2d');
+  var swatch=BOWL_COLOURS.filter(function(b){ return b.key===state.bowlColour; })[0];
+  if(swatch && swatch.col){ g.fillStyle=swatch.col; g.fillRect(0,0,w,h); }
+  else {
+    if(!kraftTex) kraftTex=kraftTexture();              // also fills kraftCanvas
+    var kc=kraftCanvas, tile=Math.round(w/9);
+    for(var x=0;x<w;x+=tile) for(var y=0;y<h;y+=Math.round(h/3))
+      g.drawImage(kc, x, y, tile, Math.round(h/3));
+  }
+  var img=stickerImgs[state.stickerIndex];
+  if(img && img.complete && img.naturalWidth){
+    var mmPx = w/s.arcT;                                // px per mm, isotropic
+    var sw = STICKER.wIn*MM_IN*mmPx;
+    var sh = sw*img.naturalHeight/img.naturalWidth;
+    var midMM = (BASE_SAFE + (s.slant-RIM_SAFE))/2;     // centre of the live band
+    var cy = (1 - midMM/s.slant)*h;
+    g.imageSmoothingQuality='high';
+    g.drawImage(img, w/2 - sw/2, cy - sh/2, sw, sh);
+  }
+  return canvas;
+}
+
 function composite(canvas, w, h){
+  if(state.mode==='sticker') return compositeSticker(canvas, w, h);
   canvas.width=w; canvas.height=h;
   var g=canvas.getContext('2d');
   g.clearRect(0,0,w,h);
@@ -682,6 +750,7 @@ function rebuild(){
   }
   applyColors();
   if(state.mode==='tape') refreshTape();
+  else if(state.mode==='sticker') refreshSticker();
   else refreshWrap();     // demo + guide are drawn to fit the current strip
   readout();
 }
@@ -708,6 +777,7 @@ function kraftTexture(){
     g.lineWidth=Math.random()<0.5?1.2:2.1;
     g.beginPath(); g.moveTo(x,y); g.lineTo(x+Math.cos(a)*l, y+Math.sin(a)*l); g.stroke();
   }
+  kraftCanvas=c;
   var t=new THREE.CanvasTexture(c);
   t.colorSpace=THREE.SRGBColorSpace;
   t.wrapS=t.wrapT=THREE.RepeatWrapping;
@@ -715,9 +785,25 @@ function kraftTexture(){
   t.anisotropy=renderer.capabilities.getMaxAnisotropy();
   return t;
 }
-var kraftTex=null;
+var kraftTex=null, kraftCanvas=null;
 
 function applyColors(){
+  if(state.mode==='sticker'){
+    /* Wall carries the strip (board + sticker); everything else is plain board
+       so the rim and interior read as one piece with it. */
+    matWall.map=tex; matWall.color.set('#ffffff'); matWall.roughness=0.88;
+    matWall.needsUpdate=true;
+    var sw=BOWL_COLOURS.filter(function(b){ return b.key===state.bowlColour; })[0];
+    var isKraft = !(sw && sw.col);
+    if(isKraft && !kraftTex) kraftTex=kraftTexture();
+    [matRim,matInner,matBase].forEach(function(m){
+      m.color.set(isKraft ? '#ffffff' : sw.col);
+      m.map = isKraft ? kraftTex : null;
+      m.roughness = isKraft ? 0.94 : 0.80;
+      m.needsUpdate=true;
+    });
+    return;
+  }
   if(state.mode==='tape'){
     /* Concept two is a plain natural kraft bowl — no printed wrap anywhere, so
        every shell material is the same board. */
@@ -820,7 +906,37 @@ function readoutTape(){
   document.getElementById('sub').textContent =
     PRESETS[state.preset].label+' kraft · tape '+TAPE.lIn+' × '+TAPE.wIn+' in';
 }
+function readoutSticker(){
+  var s=state.spec, img=stickerImgs[state.stickerIndex];
+  var w=STICKER.wIn*MM_IN;
+  var h=img && img.naturalWidth ? w*img.naturalHeight/img.naturalWidth : 0;
+  var band=s.slant-RIM_SAFE-BASE_SAFE;
+  var clear=(band-h)/2;
+  document.getElementById('k_size').textContent =
+    STICKER.wIn.toFixed(2)+' × '+(h/MM_IN).toFixed(2)+' in  ('+w.toFixed(1)+' × '+h.toFixed(1)+' mm)';
+  document.getElementById('k_px').textContent =
+    Math.round(w*300/25.4)+' × '+Math.round(h*300/25.4)+' px';
+  document.getElementById('k_slant').textContent = n(s.slant,2)+' mm';
+  document.getElementById('k_band').textContent  = n(band,2)+' mm';
+  document.getElementById('k_clear').textContent = n(clear,1)+' mm each';
+  document.getElementById('k_share').textContent =
+    n(w/s.arcT*100,1)+'% of '+n(s.arcT,0)+' mm';
+  var wn=document.getElementById('k_warn');
+  if(clear < 0){
+    wn.className='note warn';
+    wn.textContent='Sticker is taller than the live band — it would run into the '+
+      'rim curl or the base crimp.';
+  } else {
+    wn.className='note';
+    wn.textContent='Centred on the wall, '+n(clear,1)+' mm clear of the rim curl '+
+      'and the base crimp. A label this size wraps '+n(w/s.arcT*360,0)+'° around '+
+      'the bowl, so it curves away at the edges.';
+  }
+  document.getElementById('sub').textContent =
+    PRESETS[state.preset].label+' · sticker '+STICKER.wIn.toFixed(2)+' in wide';
+}
 function readout(){
+  if(state.mode==='sticker'){ readoutSticker(); return; }
   if(state.mode==='tape'){ readoutTape(); return; }
   var s=state.spec;
   var box=sectorBox(s.rhoIn, s.rhoOut, s.sweep/2);
@@ -1155,9 +1271,10 @@ function pickMode(k){
   Array.prototype.forEach.call(modeHost.children,function(b){
     b.setAttribute('aria-pressed', b.dataset.key===k ? 'true':'false');
   });
-  document.getElementById('hint').textContent = k==='tape'
-    ? 'Drag to orbit · scroll to zoom · pick a tape artwork on the right'
-    : 'Drag to orbit · scroll to zoom · double-click to reset';
+  document.getElementById('hint').textContent =
+    k==='tape'    ? 'Drag to orbit · scroll to zoom · pick a tape artwork on the right' :
+    k==='sticker' ? 'Drag to orbit · scroll to zoom · sticker shown at true 3.18 in size'
+                  : 'Drag to orbit · scroll to zoom · double-click to reset';
   rebuild();
   frame(); cam.tR=Math.max(state.spec.dTop, state.spec.H*1.6)*2.7;
 }
@@ -1193,6 +1310,63 @@ function pickTape(kind, i){
     b.classList.toggle('primary', b.getAttribute('data-tape')===kind);
   });
   refreshTape();
+}
+
+/* ---- bowl colour (sticker mode) ---- */
+var bowlHost=document.getElementById('bowlCols');
+BOWL_COLOURS.forEach(function(b){
+  var el=document.createElement('button');
+  el.setAttribute('aria-pressed','false'); el.dataset.key=b.key;
+  el.innerHTML='<b>'+b.name+'</b><span>'+b.note+'</span>';
+  el.addEventListener('click',function(){ pickBowlColour(b.key); });
+  bowlHost.appendChild(el);
+});
+function pickBowlColour(k){
+  state.bowlColour=k;
+  Array.prototype.forEach.call(bowlHost.children,function(el){
+    el.setAttribute('aria-pressed', el.dataset.key===k ? 'true':'false');
+  });
+  applyColors(); refreshSticker();
+}
+
+/* ---- sticker artwork ---- */
+var stickerHost=document.getElementById('stickerArt');
+STICKER_ART.forEach(function(a, i){
+  var im=new Image();
+  im.onload=function(){
+    if(state.mode==='sticker' && state.stickerIndex===i) refreshSticker();
+  };
+  im.src=a.uri;
+  stickerImgs[i]=im;
+  var el=document.createElement('button');
+  el.setAttribute('aria-pressed','false');
+  el.innerHTML='<b>'+a.name+'</b>';
+  el.addEventListener('click',function(){ pickSticker(i); });
+  stickerHost.appendChild(el);
+});
+if(!STICKER_ART.length)
+  stickerHost.innerHTML='<p class="note">No sticker baked in — add PNGs to the '+
+    '“Bowl Sticker” folder and rerun tools/build.py.</p>';
+
+function pickSticker(i){
+  state.stickerIndex=i;
+  Array.prototype.forEach.call(stickerHost.children,function(el, j){
+    if(el.tagName!=='BUTTON') return;
+    el.setAttribute('aria-pressed', j===i ? 'true':'false');
+  });
+  refreshSticker();
+}
+function refreshSticker(){
+  refreshTexture();
+  var n=document.getElementById('stickernote');
+  var img=stickerImgs[state.stickerIndex];
+  if(img && img.naturalWidth){
+    var mm=STICKER.wIn*MM_IN, h=mm*img.naturalHeight/img.naturalWidth;
+    n.className='note';
+    n.textContent=img.naturalWidth+' × '+img.naturalHeight+' px · placed at '+
+      mm.toFixed(1)+' × '+h.toFixed(1)+' mm on the wall.';
+  } else { n.className='note'; n.textContent='Loading…'; }
+  readout();
 }
 
 /* ---- bowl size presets ---- */
@@ -1424,6 +1598,8 @@ window.FieldsBowl={
   tapeCanvas:  tapeCanvas,
   tapeArt:     function(i){ pickTape('art', i); },
   wrapArt:     function(i){ pickWrap('art', i); },
+  sticker:     function(i){ pickSticker(i||0); },
+  bowlColour:  function(k){ pickBowlColour(k); },
   renderer:    renderer,
   lights:      { key:key, fill:fill, back:back, amb:amb },
   spec:        function(){ return state.spec; },
@@ -1446,6 +1622,8 @@ pickSize(DEFAULT_PRESET);
 pickLiner('match');
 pickTape(TAPE_ART.length ? 'art' : 'guide', 0);
 pickWrap(WRAP_ART.length ? 'art' : 'template', 0);
+pickBowlColour('white');
+if(STICKER_ART.length) pickSticker(0);
 cam.r=cam.tR;
 resize(); tick();
 })();
