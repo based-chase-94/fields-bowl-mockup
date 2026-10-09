@@ -329,12 +329,37 @@ or **natural kraft**.
 |---|---|
 | Size | **3.18 × 1.38 in** (80.8 × 35.0 mm) |
 | At 300 dpi | 954 × 413 px |
-| Supplied art | `01-fields-logo.png`, 938 × 406 px — **295 dpi** at final size |
-| Construction | white die-cut shape with the poppy `#FC2E02` logo |
+| Supplied art | 938 × 406 px — **295 dpi** at final size |
+| Construction | white die-cut shape with the logo printed on it |
+
+Two colourways, both the same shape and size:
+
+| # | File | Logo |
+|---|---|---|
+| 1 | `01-poppy-logo.png` | poppy `#FC2E02` |
+| 2 | `02-yellow-logo.png` | yellow `#FFDA02` |
 
 Width is the client's 3.18 in; height follows the artwork's own 2.31:1 aspect.
-The supplied file lands at 295 dpi, near enough to 300 for print — but it is at
-its limit, so do not scale it up.
+The supplied files land at 295 dpi, near enough to 300 for print — but they are
+at their limit, so do not scale them up.
+
+Note the yellow is `#FFDA02`, a touch warmer than the established brand yellow
+`#FCE300`. Worth reconciling before anything is specified to a Pantone.
+
+### Contrast — pair the colourway to the bowl
+
+Both stickers carry a white die-cut border, which is what separates them from
+the bowl. On a white bowl that border disappears:
+
+| Sticker | On white bowl | On kraft bowl |
+|---|---|---|
+| Poppy | **3.21:1** | 1.60:1 |
+| Yellow | **1.16:1** | 1.72:1 |
+
+The yellow logo on a white bowl is 1.16:1 — effectively invisible, and the white
+border gives it no help at 1.18:1 against the bowl. **Yellow wants the kraft
+bowl; poppy is the stronger choice on white.** Check this in the viewer by
+switching Bowl colour against each sticker.
 
 ### How it sits on the bowl
 
