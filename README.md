@@ -28,6 +28,7 @@ Then open <http://localhost:8123/>.
 | **Tape artwork** *(tape mode)* | Colourways baked in from the `Bowl Tape` folder — click to switch. *Guide* shows the zone template, *Blank* is unprinted tape. No uploader: add artwork to that folder and rebuild |
 | **Bowl size** | Five stock sizes across 44–52 oz, from real manufacturer spec sheets. Switching rebuilds the model and recalculates every die-line figure |
 | **Rim & interior** *(all-over mode)* | The liner — printed to the rim, white board, or natural kraft. Ink stops 5 mm below the rim edge, so on *White* and *Natural kraft* that band and the bead show bare board |
+| **Bowl size** | 32 oz and 44 oz. Other presets stay in `PRESETS` but are kept out of the list by `SIZE_PICKER_ONLY` — set it to `null` to show them all |
 | **Bowl colour** *(sticker mode)* | White or natural kraft, for the unprinted bowl the sticker goes on |
 | **Wrap artwork** *(all-over mode)* | Artwork baked in from the `AOP Bowl` folder — click to switch. *Guide* is the calibration grid, *None* is flood colour only |
 | **Save view as PNG** | 1×/2×/4×, transparent background unless you tick the backdrop |
@@ -51,6 +52,19 @@ artwork that looks wrong for reasons nobody can trace. To change either, edit
 **Artwork is size-specific.** Strip aspect ratios run from 7.02:1 to 8.78:1
 across the candidates, so a strip built for one size stretches on another. See
 [SPECS.md](SPECS.md) for the per-size table.
+
+## Artwork templates
+
+`tools/make_template.py` writes a guide overlay for any size into a `Templates`
+folder beside the artwork:
+
+```bash
+python3 tools/make_template.py "32 oz"     # or omit the size for all of them
+```
+
+Each run produces a transparent 300 dpi PNG to lay over artwork at the same pixel
+size, and an SVG with the strip, live area and front centre as vector guides in
+millimetres. Labels carry a light halo so they stay readable over any ground.
 
 ## Source artwork lives outside this repo
 

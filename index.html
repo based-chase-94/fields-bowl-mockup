@@ -292,11 +292,11 @@ var PRESETS = [
 ];
 var DEFAULT_PRESET = 1;   // 44 oz
 
-/* The size picker is stowed for client review — the bowl is fixed at
-   DEFAULT_PRESET and the artwork is built to match it. Nothing is deleted:
-   flip this to true to bring the control back, e.g. when choosing between two
-   quoted specs so artwork can be drawn to each rather than stretched to fit. */
-var SHOW_SIZE_PICKER = false;
+/* Size picker: shown, but trimmed to the sizes actually in play. The rest stay
+   in PRESETS so artwork tokens and FieldsBowl.pickSize() can still reach them —
+   set SIZE_PICKER_ONLY to null to list every preset. */
+var SHOW_SIZE_PICKER = true;
+var SIZE_PICKER_ONLY = ['32 oz', '44 oz'];
 
 /* Guide / None / Blank are working tools, not client choices — stowed the same
    way. Nothing is deleted: flip this, or call FieldsBowl.artworkExtras(true)
@@ -1390,8 +1390,10 @@ function refreshSticker(){
 /* ---- bowl size presets ---- */
 var sizeHost=document.getElementById('sizes');
 PRESETS.forEach(function(q, i){
+  if(SIZE_PICKER_ONLY && SIZE_PICKER_ONLY.indexOf(q.label)<0) return;
   var b=document.createElement('button');
   b.setAttribute('aria-pressed','false');
+  b.dataset.idx=i;                       // buttons no longer index PRESETS 1:1
   b.innerHTML='<b>'+q.label+'</b><span>'+q.dTop+' × '+q.dBot+' × '+q.H+' mm</span>';
   b.addEventListener('click',function(){ pickSize(i); });
   sizeHost.appendChild(b);
@@ -1399,8 +1401,8 @@ PRESETS.forEach(function(q, i){
 function pickSize(i){
   var q=PRESETS[i];
   state.preset=i; state.dTop=q.dTop; state.dBot=q.dBot; state.H=q.H;
-  Array.prototype.forEach.call(sizeHost.children,function(b,j){
-    b.setAttribute('aria-pressed', j===i ? 'true':'false');
+  Array.prototype.forEach.call(sizeHost.children,function(b){
+    b.setAttribute('aria-pressed', Number(b.dataset.idx)===i ? 'true':'false');
   });
   document.getElementById('sizenote').textContent =
     q.ml+' ml nominal · wide/'+q.form+' · '+q.src;
