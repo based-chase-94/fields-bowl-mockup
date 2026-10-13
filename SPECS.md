@@ -378,6 +378,12 @@ Four colourways, all the same shape and size:
 | 2 | `02-yellow-logo.png` | yellow `#FFDA02` |
 | 3 | `03-lavender-logo.png` | lavender `#C4A7D9` |
 | 4 | `04-green-logo.png` | forest `#1F3322` |
+| 5 | `05-Grassy-Field.png` | photographic grass fill, mean `#33570A` |
+
+Option 5 is the one exception to the shared shape: it is 952 × 422 px (2.256:1)
+rather than 938 × 406 (2.310:1), so at the same 3.18 in width it stands
+**35.8 mm tall instead of 35.0 mm**. It still clears the live band comfortably —
+12.1 mm each side on the 44 oz, 8.6 mm on the 32 oz.
 
 Width is the client's 3.18 in; height follows the artwork's own 2.31:1 aspect.
 The supplied files land at 295 dpi, near enough to 300 for print — but they are
@@ -397,9 +403,15 @@ the bowl. On a white bowl that border disappears:
 | Yellow | **1.16:1** | 1.72:1 |
 | Lavender | 1.80:1 | **1.11:1** |
 | Green | **11.43:1** | **5.71:1** |
+| Grassy Field | **7.09:1** | **3.54:1** |
 
-**Green is the only one that is legible on both bowls**, by a wide margin — it
-is the safe pick if the bowl colour is not yet settled.
+**Green and Grassy Field are the two that work on either bowl.** Green is the
+strongest by a wide margin; Grassy Field is close behind and legible on both.
+Either is a safe pick while the bowl colour is unsettled.
+
+Grassy Field's figure is computed from the mean of its photographic fill
+(`#33570A`); the fill ranges light to dark, so individual letters will vary
+around that number rather than holding it exactly.
 
 The other three each have a bowl they do not suit: yellow on white is 1.16:1 and
 lavender on kraft is 1.11:1, both effectively invisible, and the white die-cut
