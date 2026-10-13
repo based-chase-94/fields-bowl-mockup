@@ -379,12 +379,14 @@ or **natural kraft**.
 | Supplied art | 938 × 406 px — **295 dpi** at final size |
 | Construction | white die-cut shape with the logo printed on it |
 
-Two colourways, both the same shape and size:
+Four colourways, all the same shape and size:
 
 | # | File | Logo |
 |---|---|---|
 | 1 | `01-poppy-logo.png` | poppy `#FC2E02` |
 | 2 | `02-yellow-logo.png` | yellow `#FFDA02` |
+| 3 | `03-lavender-logo.png` | lavender `#C4A7D9` |
+| 4 | `04-green-logo.png` | forest `#1F3322` |
 
 Width is the client's 3.18 in; height follows the artwork's own 2.31:1 aspect.
 The supplied files land at 295 dpi, near enough to 300 for print — but they are
@@ -400,13 +402,21 @@ the bowl. On a white bowl that border disappears:
 
 | Sticker | On white bowl | On kraft bowl |
 |---|---|---|
-| Poppy | **3.21:1** | 1.60:1 |
+| Poppy | 3.21:1 | 1.60:1 |
 | Yellow | **1.16:1** | 1.72:1 |
+| Lavender | 1.80:1 | **1.11:1** |
+| Green | **11.43:1** | **5.71:1** |
 
-The yellow logo on a white bowl is 1.16:1 — effectively invisible, and the white
-border gives it no help at 1.18:1 against the bowl. **Yellow wants the kraft
-bowl; poppy is the stronger choice on white.** Check this in the viewer by
-switching Bowl colour against each sticker.
+**Green is the only one that is legible on both bowls**, by a wide margin — it
+is the safe pick if the bowl colour is not yet settled.
+
+The other three each have a bowl they do not suit: yellow on white is 1.16:1 and
+lavender on kraft is 1.11:1, both effectively invisible, and the white die-cut
+border offers no rescue on the white bowl at 1.18:1 against the board. Poppy is
+the strongest of the three, and only on white.
+
+Check this in the viewer by switching Bowl colour against each sticker — the
+difference is immediate.
 
 ### How it sits on the bowl
 
