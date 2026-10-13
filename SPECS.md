@@ -175,25 +175,16 @@ Four options, all **6827 × 838 px** with a transparent ground so the Fields
 yellow shows through. The wordmark is poppy `#FD2E02` throughout; only the
 dandelion changes. Option 1 loads by default:
 
-| # | File | Dandelion |
-|---|---|---|
-| 1 | `01-all-red.png` | poppy `#FD2E02` — single ink, everything one colour |
-| 2 | `02-poppy-flowers.png` | poppy `#FD2E02` |
-| 3 | `03-burgundy-flowers.png` | burgundy `#691934` |
-| 4 | `04-green-flowers.png` | forest `#1E3522` |
-| 5 | `05-lavender-flowers--on-FD2E02--32oz.png` | lavender `#C4A9D9` on a **poppy** 32 oz bowl |
+| # | File | Ink | Ground |
+|---|---|---|---|
+| 1 | `01-all-red.png` | poppy `#FD2E02`, single ink | yellow `#FCE300`, 44 oz |
+| 2 | `05-lavender-flowers--on-FD2E02--32oz.png` | lavender `#C4A7D9` | poppy `#FD2E02`, 32 oz |
 
-Option 5 is a **mechanical recolour** of option 1, not a designer export: option 1
-is single-ink, so every pixel's RGB was replaced with lavender `#C4A9D9` and the
-alpha channel kept byte-for-byte identical. It is exact for mockup purposes, but
-print-ready art should still come from the source file — a hand-made version may
-want different weight or trapping against the poppy ground.
+Earlier flower colourways (poppy, burgundy, forest on yellow) were withdrawn and
+sit in `AOP Bowl/archive/` — the build ignores subfolders, so moving one back up
+a level restores it as an option.
 
-Option 1 is a **single-ink design** — worth flagging to the converter, since a
-one-colour wrap on a flood-yellow bowl may price differently from the two-colour
-options.
-
-All three check out against the geometry:
+Both check out against the geometry:
 
 | Check | Result |
 |---|---|
