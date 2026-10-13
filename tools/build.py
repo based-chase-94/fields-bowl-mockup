@@ -59,14 +59,36 @@ def data_uri(path):
         return f"data:{MIME[ext]};base64," + base64.b64encode(f.read()).decode("ascii")
 
 
-def label_from(filename):
-    """Button label from the filename. A leading numeric prefix orders the
-    buttons and is stripped from the label, so 01-poppy-flowers.png shows as
-    "Poppy flowers"."""
+def parse_name(filename):
+    """Button label plus any variant the filename pins.
+
+    A leading numeric prefix orders the buttons and is stripped. Optional
+    trailing tokens, each introduced by '--', describe the colourway so that one
+    click sets the whole bowl:
+
+        05-lavender-flowers--on-FD2E02--32oz.png
+        -> label "Lavender flowers", ground #FD2E02, size "32 oz"
+
+    Artwork with no tokens keeps the default body colour and whatever size is
+    selected.
+    """
     stem = os.path.splitext(filename)[0]
     stem = re.sub(r"^\d+[-_ ]+", "", stem)
-    stem = stem.replace("-", " ").replace("_", " ").strip()
-    return stem[:1].upper() + stem[1:]
+    parts = stem.split("--")
+    label, ground, size = parts[0], None, None
+    for tok in parts[1:]:
+        tok = tok.strip()
+        m = re.fullmatch(r"on-([0-9A-Fa-f]{6})", tok)
+        if m:
+            ground = "#" + m.group(1).upper()
+            continue
+        m = re.fullmatch(r"(\d+)\s*oz", tok, re.I)
+        if m:
+            size = m.group(1) + " oz"
+            continue
+        print(f"    warning: unrecognised token {tok!r} in {filename}")
+    label = label.replace("-", " ").replace("_", " ").strip()
+    return label[:1].upper() + label[1:], ground, size
 
 
 def scan(folder, single_label):
@@ -77,9 +99,17 @@ def scan(folder, single_label):
     files = sorted(f for f in os.listdir(folder) if f.lower().endswith(EXT))
     out = []
     for f in files:
-        name = single_label if (single_label and len(files) == 1) else label_from(f)
-        out.append({"name": name, "uri": data_uri(os.path.join(folder, f))})
-        print(f"  {os.path.basename(folder)}/{f}  ->  {name!r}")
+        label, ground, size = parse_name(f)
+        if single_label and len(files) == 1:
+            label = single_label
+        entry = {"name": label, "uri": data_uri(os.path.join(folder, f))}
+        if ground:
+            entry["ground"] = ground
+        if size:
+            entry["size"] = size
+        extra = "".join(f"  {k}={entry[k]}" for k in ("ground", "size") if k in entry)
+        out.append(entry)
+        print(f"  {os.path.basename(folder)}/{f}  ->  {label!r}{extra}")
     return out
 
 

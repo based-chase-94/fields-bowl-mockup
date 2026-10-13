@@ -277,6 +277,8 @@ var BODY_COLOUR = '#FCE300';
    Two form factors dominate this band: a ~165 mm narrow/tall shape and a
    ~180-185 mm wide/shallow one. */
 var PRESETS = [
+  { label:'32 oz', ml:946,  dTop:185,   dBot:163,   H:63, form:'shallow',
+    src:'Vegware / Green Paper Products 185-Series' },
   { label:'44 oz', ml:1300, dTop:184,   dBot:161,   H:70, form:'shallow',
     src:'Bioleader PE-SSK44' },
   { label:'48 oz', ml:1420, dTop:184.9, dBot:162.1, H:82, form:'deep',
@@ -288,7 +290,7 @@ var PRESETS = [
   { label:'52 oz', ml:1500, dTop:185,   dBot:160,   H:65, form:'shallow',
     src:'SoOPAK 1500 ml (sold as 50-52 oz)' }
 ];
-var DEFAULT_PRESET = 0;
+var DEFAULT_PRESET = 1;   // 44 oz
 
 /* The size picker is stowed for client review — the bowl is fixed at
    DEFAULT_PRESET and the artwork is built to match it. Nothing is deleted:
@@ -718,14 +720,29 @@ function composite(canvas, w, h){
     g.beginPath(); g.rect(0, stop, w, h-stop); g.clip();
   }
   g.fillStyle=state.body; g.fillRect(0,0,w,h);
-  if(state.wrapSource){ g.imageSmoothingQuality='high';
-    g.drawImage(state.wrapSource,0,0,w,h); }
+  if(state.wrapSource){
+    g.imageSmoothingQuality='high';
+    /* Width always spans the circumference — the wrap has to close at the seam.
+       Height is then scaled by the SAME factor and anchored to the base, so the
+       artwork keeps its proportions and its real printed size. Stretching it to
+       fill a shorter wall instead would squash the design; a shallower bowl
+       should simply leave more bare space above it. */
+    var sw=state.wrapSource.width||state.wrapSource.naturalWidth;
+    var sh=state.wrapSource.height||state.wrapSource.naturalHeight;
+    var dh = sw ? h*0+w*(sh/sw) : h;
+    g.drawImage(state.wrapSource, 0, h-dh, w, dh);
+  }
   g.restore();
   return canvas;
 }
 function refreshTexture(){
   var s=state.spec, w=2048;
   composite(liveCanvas, w, Math.max(2, Math.round(w*s.slant/s.arcT)));
+  /* Dispose, don't just flag. needsUpdate re-uploads the base level but leaves
+     the mipmap chain stale, and the wall is grazing enough near the rim to
+     sample those small mips — switching body colour left a ring of the PREVIOUS
+     colour under the rim. Disposing forces a full re-init with fresh mipmaps. */
+  tex.dispose();
   tex.needsUpdate=true;
 }
 
@@ -1069,6 +1086,7 @@ function tapeCanvas(){
 
 function refreshTape(){
   tapeCanvas();
+  tapeTex.dispose();          // same stale-mipmap trap as the wall strip
   tapeTex.needsUpdate=true;
   var t=state.tape, n=document.getElementById('tapenote');
   if(state.tapeKind==='art'){
@@ -1522,13 +1540,25 @@ function refreshWrap(){
   state.wrapSource=src;
   if(k==='art'){
     if(im && im.naturalWidth){
-      var want=state.spec.arcT/state.spec.slant, got=im.naturalWidth/im.naturalHeight;
-      var off=Math.abs(got-want)/want*100;
-      note.className = off>2 ? 'note warn' : 'note';
-      note.textContent = im.naturalWidth+' × '+im.naturalHeight+' px · '+
-        (off>2 ? 'aspect is '+off.toFixed(0)+'% off this size\u2019s strip ('+
-                 state.spec.pxW+' × '+state.spec.pxH+') and will be stretched.'
-               : 'matches the strip aspect.');
+      /* Width spans the circumference; height follows at the same scale and is
+         anchored to the base, so this reports how the artwork's own wall height
+         compares with this bowl's. */
+      var s2=state.spec;
+      var nativeSlant = s2.arcT * im.naturalHeight / im.naturalWidth;
+      var diff = nativeSlant - s2.slant;
+      note.className='note';
+      if(Math.abs(diff) < 0.5){
+        note.textContent = im.naturalWidth+' × '+im.naturalHeight+' px · drawn at '+
+          'true size; the artwork was built for this wall.';
+      } else if(diff > 0){
+        note.textContent = im.naturalWidth+' × '+im.naturalHeight+' px · drawn at '+
+          'true size from the base. The artwork was built for a '+
+          nativeSlant.toFixed(1)+' mm wall, so its top '+diff.toFixed(1)+
+          ' mm falls above this one — fine if that area is empty.';
+      } else {
+        note.textContent = im.naturalWidth+' × '+im.naturalHeight+' px · drawn at '+
+          'true size from the base, leaving '+(-diff).toFixed(1)+' mm bare above it.';
+      }
     } else { note.className='note'; note.textContent='Loading…'; }
   } else if(k==='none'){
     note.className='note'; note.textContent='Flood colour only — no artwork applied.';
@@ -1559,6 +1589,19 @@ if(!WRAP_ART.length)
 function pickWrap(kind, i){
   state.wrapKind=kind;
   if(i!==undefined) state.wrapIndex=i;
+  /* An artwork may carry its own colourway: ground colour, and the bowl size it
+     was drawn for. Picking it sets the whole bowl in one click. */
+  var meta = (kind==='art' && WRAP_ART[state.wrapIndex]) || {};
+  state.body = meta.ground || BODY_COLOUR;      // set before any rebuild reads it
+  var sizeChanged=false;
+  if(meta.size){
+    for(var q=0;q<PRESETS.length;q++) if(PRESETS[q].label===meta.size && q!==state.preset){
+      pickSize(q); sizeChanged=true; break;     // rebuild -> applyColors -> refresh
+    }
+  }
+  /* applyColors, not just refreshTexture: with the liner set to "matches body"
+     the rim curl and interior take the ground colour too. */
+  if(!sizeChanged) applyColors();
   Array.prototype.forEach.call(wrapHost.children,function(b, j){
     if(b.tagName!=='BUTTON') return;
     b.setAttribute('aria-pressed',

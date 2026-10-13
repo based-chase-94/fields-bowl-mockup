@@ -121,6 +121,46 @@ between screen, CMYK and coated stock.
 
 ---
 
+### The 32 oz bowl
+
+The client's 32 oz is the **same 185-Series body** as the 48 oz — same 185 mm top
+diameter, just shallower. That is what makes it workable:
+
+| | 32 oz | 44 oz |
+|---|---|---|
+| Top × base × height | 185 × 163 × 63 mm | 184 × 161 × 70 mm |
+| Rim circumference | 581.2 mm | 578.1 mm |
+| Slant (wall height) | 63.95 mm | 70.94 mm |
+| Strip @ 300 dpi | 6865 × 755 px | 6827 × 838 px |
+
+**Circumference differs by 0.54 %, slant by 9.85 %.** So the wrap still closes at
+the seam, and only the wall height really changes.
+
+The viewer therefore places wrap artwork at **true physical scale, anchored to
+the base**: width always spans the circumference (it has to, to meet at the
+seam) and height follows at the same scale. A shallower bowl simply leaves more
+bare board above the artwork rather than squashing it. The existing artwork's ink
+reaches 54.8 mm, so on the 32 oz wall it still clears the print stop by 4.15 mm —
+**no re-layout needed to see it.**
+
+Confirm the 32 oz dimensions against the supplier's own sheet before anything is
+printed; the figures above are from published 185-Series specs, not a quote.
+
+### Colourways — artwork can carry its own bowl
+
+An artwork filename may pin the ground colour and the bowl size, so one click
+sets the whole mockup:
+
+```
+05-lavender-flowers--on-FD2E02--32oz.png
+   -> label "Lavender flowers", poppy #FD2E02 ground, 32 oz bowl
+```
+
+Tokens are optional and order-independent: `--on-RRGGBB` sets the ground,
+`--NNoz` pins the size. Artwork with no tokens keeps the default yellow body and
+whatever size is selected. This keeps the client-facing panel a plain list of
+options with no extra controls to mis-set.
+
 ### Artwork in the viewer
 
 The all-over artwork is **baked in** from the **`AOP Bowl`** folder beside
@@ -141,6 +181,13 @@ dandelion changes. Option 1 loads by default:
 | 2 | `02-poppy-flowers.png` | poppy `#FD2E02` |
 | 3 | `03-burgundy-flowers.png` | burgundy `#691934` |
 | 4 | `04-green-flowers.png` | forest `#1E3522` |
+| 5 | `05-lavender-flowers--on-FD2E02--32oz.png` | lavender `#C4A9D9` on a **poppy** 32 oz bowl |
+
+Option 5 is a **mechanical recolour** of option 1, not a designer export: option 1
+is single-ink, so every pixel's RGB was replaced with lavender `#C4A9D9` and the
+alpha channel kept byte-for-byte identical. It is exact for mockup purposes, but
+print-ready art should still come from the source file — a hand-made version may
+want different weight or trapping against the poppy ground.
 
 Option 1 is a **single-ink design** — worth flagging to the converter, since a
 one-colour wrap on a flood-yellow bowl may price differently from the two-colour
